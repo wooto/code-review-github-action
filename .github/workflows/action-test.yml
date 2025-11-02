@@ -267,8 +267,8 @@ jobs:
                   uses: ./
                   with:
                     github-token: ${{ secrets.GITHUB_TOKEN }}
-                    openai-api-keys: sk-test-key-1
-                    providers: openai
+                    gemini-api-keys: ${{ secrets.GEMINI_API_KEY }}
+                    providers: gemini
                     review-focus: security,performance
                     fail-fast: false
           EOF

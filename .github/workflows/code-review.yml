@@ -31,10 +31,9 @@ jobs:
         run: npm run build:all
 
       - name: Run Code Review
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          REPO_NAME: ${{ github.repository }}
-        run: |
-          node dist/index.js
+        uses: ./
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          gemini-api-keys: ${{ secrets.GEMINI_API_KEYS }}
+          providers: gemini
+          review-focus: security,performance,style
