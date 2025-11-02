@@ -1,0 +1,211 @@
+# Advanced AI Code Review Workflow
+# This configuration shows advanced features and customizations
+
+name: Advanced AI Code Review
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  # Optional: Run on demand with workflow_dispatch
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to review'
+        required: true
+        type: string
+
+jobs:
+  ai-review:
+    runs-on: ubuntu-latest
+    name: AI Code Review
+    # Optional: Run only for specific conditions
+    if: |
+      !contains(github.event.pull_request.title, '[WIP]') &&
+      !contains(github.event.pull_request.title, '[DRAFT]')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # Fetch full history for better diff analysis
+          fetch-depth: 0
+
+      - name: AI Code Review - Full Analysis
+        uses: your-username/code-review-action@latest
+        with:
+          # Required: GitHub token
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+          # Provider Configuration
+          # Use multiple keys for high availability and load balancing
+          openai-api-keys: ${{ secrets.OPENAI_API_KEYS_PROD }}
+          claude-api-keys: ${{ secrets.CLAUDE_API_KEYS_PROD }}
+          gemini-api-keys: ${{ secrets.GEMINI_API_KEYS_PROD }}
+
+          # Provider selection with priority order
+          providers: 'claude,openai,gemini'
+
+          # Advanced Review Configuration
+          # Focus on security and performance for production code
+          review-focus: 'security,performance,maintainability,bugs'
+
+          # Larger chunks for comprehensive analysis
+          chunk-size: '3000'
+
+          # Skip generated files and dependencies
+          skip-patterns: |
+            *.min.js
+            *.min.css
+            package-lock.json
+            yarn.lock
+            dist/*
+            build/*
+            coverage/*
+            .next/*
+            node_modules/*
+            *.generated.*
+            *.pb.go
+            *_pb2.py
+
+          # Custom review instructions for your project
+          custom-prompt: |
+            You are reviewing code for a production system. Please focus on:
+
+            1. Security vulnerabilities and potential attack vectors
+            2. Performance bottlenecks and optimization opportunities
+            3. Code maintainability and technical debt
+            4. Error handling and edge cases
+            5. Compliance with our coding standards:
+               - Use TypeScript strict mode
+               - Follow functional programming patterns where appropriate
+               - Include comprehensive error handling
+               - Add input validation
+               - Write self-documenting code
+
+            For each issue found, provide:
+            - Severity level (critical/high/medium/low)
+            - Specific line reference
+            - Clear explanation of the problem
+            - Concrete suggestion for improvement
+            - Code example when helpful
+
+            Please be thorough but prioritize critical security and performance issues.
+
+      # Optional: Run a separate focused review for documentation
+      - name: Documentation Review
+        if: contains(github.event.pull_request.changed_files, 'README.md') || contains(github.event.pull_request.changed_files, 'docs/')
+        uses: your-username/code-review-action@latest
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          openai-api-keys: ${{ secrets.OPENAI_API_KEYS_PROD }}
+          providers: 'openai'
+          review-focus: 'documentation,maintainability'
+          custom-prompt: |
+            Focus specifically on:
+            1. Documentation clarity and completeness
+            2. README instructions accuracy
+            3. API documentation quality
+            4. Code comments and inline documentation
+            5. Examples and usage instructions
+
+      # Optional: Security-focused review for sensitive changes
+      - name: Security Deep Dive
+        if: contains(github.event.pull_request.labels.*.name, 'security-review')
+        uses: your-username/code-review-action@latest
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          claude-api-keys: ${{ secrets.CLAUDE_API_KEYS_PROD }}
+          providers: 'claude'
+          review-focus: 'security'
+          chunk-size: '1500'  # Smaller chunks for detailed security analysis
+          custom-prompt: |
+            Perform a comprehensive security review focusing on:
+            1. Input validation and sanitization
+            2. Authentication and authorization
+            3. SQL injection and XSS vulnerabilities
+            4. Sensitive data exposure
+            5. Cryptographic implementations
+            6. Dependency security issues
+            7. API security
+            8. Configuration security
+
+            For any security issues found:
+            - Mark as HIGH severity
+            - Provide detailed exploit scenarios
+            - Suggest specific remediation steps
+            - Reference relevant security standards
+
+  # Optional: Parallel review for different aspects
+  performance-review:
+    runs-on: ubuntu-latest
+    name: Performance Review
+    # Only run for performance-sensitive changes
+    if: |
+      contains(github.event.pull_request.labels.*.name, 'performance') ||
+      contains(join(github.event.pull_request.changed_files, ' '), 'src/db/') ||
+      contains(join(github.event.pull_request.changed_files, ' '), 'src/api/')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Performance-focused Review
+        uses: your-username/code-review-action@latest
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          openai-api-keys: ${{ secrets.OPENAI_API_KEYS_PROD }}
+          providers: 'openai'
+          review-focus: 'performance'
+          custom-prompt: |
+            Focus exclusively on performance aspects:
+            1. Database query optimization
+            2. Algorithm efficiency
+            3. Memory usage patterns
+            4. I/O operations
+            5. Caching strategies
+            6. Async/await optimization
+            7. Bundle size impact
+            8. Network request optimization
+
+            Provide specific performance metrics when possible and
+            suggest measurable improvements.
+
+# Advanced Configuration Options:
+
+# Environment-based Configuration:
+# You can use different API keys for different environments:
+# - OPENAI_API_KEYS_PROD (for production repositories)
+# - OPENAI_API_KEYS_DEV (for development repositories)
+
+# Conditional Review Triggers:
+# - Use labels to trigger specific types of reviews
+# - Filter by file patterns for specialized analysis
+# - Run different reviews in parallel for comprehensive coverage
+
+# Custom Review Focus Areas:
+# - security: Security vulnerabilities and best practices
+# - performance: Performance optimizations and bottlenecks
+# - style: Code style and readability
+# - bugs: Potential bugs and edge cases
+# - maintainability: Code maintainability and technical debt
+# - documentation: Documentation quality and completeness
+# - testing: Test coverage and quality
+# - accessibility: A11y compliance and best practices
+# - i18n: Internationalization support
+
+# Repository Secrets Required:
+#
+# OPENAI_API_KEYS_PROD:
+# ["sk-proj-key1", "sk-proj-key2", "sk-proj-key3"]
+#
+# CLAUDE_API_KEYS_PROD:
+# ["sk-ant-key1", "sk-ant-key2"]
+#
+# GEMINI_API_KEYS_PROD:
+# ["AIza-key1", "AIza-key2"]
+
+# Recommended Labels for PRs:
+# - security-review: Triggers security-focused review
+# - performance: Triggers performance analysis
+# - documentation-only: Skips code review, focuses on docs
+# - skip-ai-review: Disables AI review entirely
+# - needs-expert-review: Flags for human review in addition to AI
