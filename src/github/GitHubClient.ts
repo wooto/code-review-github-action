@@ -1,4 +1,4 @@
-import { Octokit } from '@actions/github';
+import { getOctokit } from '@actions/github';
 
 export interface PRInfo {
   number: number;
@@ -15,10 +15,10 @@ export interface ReviewComment {
 }
 
 export class GitHubClient {
-  private octokit: Octokit;
+  private octokit: ReturnType<typeof getOctokit>;
 
   constructor(token: string) {
-    this.octokit = new Octokit({ auth: token });
+    this.octokit = getOctokit(token);
   }
 
   async getPRInfo(owner: string, repo: string, prNumber: number): Promise<PRInfo> {
