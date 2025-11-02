@@ -400,7 +400,7 @@ describe('Action Integration Tests - Full Execution Flow', () => {
       // Verify review comment format
       const createdReviews = mockGitHubClient.getCreatedReviews();
       expect(createdReviews[0].body).toContain('## 🤖 AI Code Review for PR #');
-      expect(createdReviews[0].body).toContain('### Summary');
+      expect(createdReviews[0].body).toContain('### 📊 Review Summary');
       expect(createdReviews[0].body).toContain('Total Suggestions');
       expect(createdReviews[0].body).toContain('High Severity');
       expect(createdReviews[0].body).toContain('Medium Severity');
