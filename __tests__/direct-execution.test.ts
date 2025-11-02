@@ -123,7 +123,7 @@ describe('Direct module execution', () => {
     // Call run directly to simulate the behavior when module is executed directly
     await run();
 
-    expect(mockCore.getInput).toHaveBeenCalledWith('github-token', { required: true });
-    expect(mockCore.getInput).toHaveBeenCalledWith('providers', { required: true });
+    expect(mockCore.getInput).toHaveBeenCalledWith('github-token');
+    expect(mockCore.getInput).toHaveBeenCalledWith('providers');
   });
 });

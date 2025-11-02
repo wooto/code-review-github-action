@@ -8,6 +8,13 @@ import { ClaudeProvider } from "./providers/claude/ClaudeProvider";
 import { GeminiProvider } from "./providers/gemini/GeminiProvider";
 import { IProvider } from "./providers/IProvider";
 
+interface Suggestion {
+  severity: 'high' | 'medium' | 'low';
+  line: number;
+  message: string;
+  suggestion: string;
+}
+
 async function run(): Promise<void> {
   try {
     console.log("🔍 DEBUG: Starting run function");
@@ -105,7 +112,7 @@ async function run(): Promise<void> {
         switch (providerName) {
           case 'openai':
             // Check if OpenAIProvider is mocked
-            if ((OpenAIProvider as any).getMockImplementation && (OpenAIProvider as any).getMockImplementation()) {
+            if ((OpenAIProvider as unknown as { getMockImplementation?: () => unknown }).getMockImplementation?.()) {
               // Provider is mocked, create with minimal config
               provider = new OpenAIProvider({
                 apiKeys: providerApiKeys.length > 0 ? providerApiKeys : [apiKey],
@@ -125,7 +132,7 @@ async function run(): Promise<void> {
             }
             break;
           case 'claude':
-            if ((ClaudeProvider as any).getMockImplementation && (ClaudeProvider as any).getMockImplementation()) {
+            if ((ClaudeProvider as unknown as { getMockImplementation?: () => unknown }).getMockImplementation?.()) {
               provider = new ClaudeProvider({
                 apiKeys: providerApiKeys.length > 0 ? providerApiKeys : [apiKey],
                 model: 'claude-3-sonnet-20240229',
@@ -144,7 +151,7 @@ async function run(): Promise<void> {
             }
             break;
           case 'gemini':
-            if ((GeminiProvider as any).getMockImplementation && (GeminiProvider as any).getMockImplementation()) {
+            if ((GeminiProvider as unknown as { getMockImplementation?: () => unknown }).getMockImplementation?.()) {
               provider = new GeminiProvider({
                 apiKeys: providerApiKeys.length > 0 ? providerApiKeys : [apiKey],
                 model: 'gemini-pro',
@@ -186,7 +193,7 @@ async function run(): Promise<void> {
           suggestions: [],
           confidence: 0.8
         })
-      } as any;
+      } as IProvider;
       providers.push(dummyProvider);
     }
 
@@ -362,8 +369,8 @@ function generateReviewComment(suggestions: any[], prInfo: any): string {
     Object.entries(suggestionsByFile).forEach(([file, fileSuggestions]) => {
       comment += `#### ${file}\n\n`;
 
-      const suggestions = fileSuggestions as any[];
-      suggestions.forEach((suggestion: any) => {
+      const suggestions = fileSuggestions as Suggestion[];
+      suggestions.forEach((suggestion: Suggestion) => {
         const severityEmoji = suggestion.severity === 'high' ? '🔴' :
                               suggestion.severity === 'medium' ? '🟡' : '🔵';
         comment += `${severityEmoji} **Line ${suggestion.line}**: ${suggestion.message}\n\n`;

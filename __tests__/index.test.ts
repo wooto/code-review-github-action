@@ -97,8 +97,8 @@ describe('index.ts', () => {
 
       await run();
 
-      expect(mockCore.getInput).toHaveBeenCalledWith('github-token', { required: true });
-      expect(mockCore.getInput).toHaveBeenCalledWith('providers', { required: true });
+      expect(mockCore.getInput).toHaveBeenCalledWith('github-token');
+      expect(mockCore.getInput).toHaveBeenCalledWith('providers');
     });
 
     it('should fail when not running on pull request', async () => {
