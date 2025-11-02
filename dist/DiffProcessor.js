@@ -69,7 +69,7 @@ class DiffProcessor {
                 rule: 'todo-comments'
             });
         }
-        if (line.trim().length > 120) {
+        if (line.length > 120) {
             issues.push({
                 line: lineNumber,
                 severity: 'warning',
@@ -80,17 +80,8 @@ class DiffProcessor {
         return issues;
     }
     analyzeFile(filename) {
-        const issues = [];
-        // File-specific checks
-        if (filename.includes('test') && !filename.includes('.spec.') && !filename.includes('.test.')) {
-            issues.push({
-                line: 0,
-                severity: 'info',
-                message: 'Test file should follow naming convention (.test. or .spec.)',
-                rule: 'test-file-naming'
-            });
-        }
-        return issues;
+        // File-specific checks can be added here
+        return [];
     }
 }
 exports.DiffProcessor = DiffProcessor;
