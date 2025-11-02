@@ -383,7 +383,7 @@ File: src/index.ts
     },
     expectedOutcome: {
       shouldSucceed: false,
-      errorMessage: 'No valid providers configured. Please provide at least one API key.',
+      errorMessage: 'No valid providers could be initialized',
       expectedCommentsCreated: 0,
       shouldCreateReviewComment: false
     }

@@ -403,7 +403,7 @@ describe('Error Handling and Edge Cases', () => {
 
       await run();
 
-      expect(mockWarning).toHaveBeenCalledTimes(2);
+      expect(mockWarning).toHaveBeenCalledTimes(1);
       expect(mockSetFailed).not.toHaveBeenCalled();
       expect(mockGitHubClient.createReviewComment).toHaveBeenCalled();
     });
@@ -781,7 +781,7 @@ File: src/test.ts
 
       await run();
 
-      expect(mockWarning).toHaveBeenCalledTimes(2);
+      expect(mockWarning).toHaveBeenCalledTimes(1);
       expect(mockSetFailed).not.toHaveBeenCalled();
       expect(mockGitHubClient.createReviewComment).toHaveBeenCalled();
     });

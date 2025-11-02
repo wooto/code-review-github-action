@@ -13,7 +13,9 @@ export class MockGitHubClient {
   private createdReviews: Array<{body: string, comments: ReviewComment[]}> = [];
   private token: string;
 
-  // Mock methods
+  // Mock methods - make them all jest mocks so they can be tested
+  public getPRDiff: jest.MockedFunction<(owner: string, repo: string, prNumber: number) => Promise<string>>;
+  public getPRInfo: jest.MockedFunction<(owner: string, repo: string, prNumber: number) => Promise<PRInfo>>;
   public createReviewComment: jest.MockedFunction<(owner: string, repo: string, prNumber: number, body: string, comments?: ReviewComment[]) => Promise<void>>;
   public createReviewCommentThread: jest.MockedFunction<(owner: string, repo: string, prNumber: number, comment: ReviewComment) => Promise<void>>;
 
@@ -21,6 +23,8 @@ export class MockGitHubClient {
     this.token = token || 'mock-token';
 
     // Initialize mock methods
+    this.getPRDiff = jest.fn().mockImplementation(this._getPRDiff.bind(this));
+    this.getPRInfo = jest.fn().mockImplementation(this._getPRInfo.bind(this));
     this.createReviewComment = jest.fn().mockImplementation(this._createReviewComment.bind(this));
     this.createReviewCommentThread = jest.fn().mockImplementation(this._createReviewCommentThread.bind(this));
   }
@@ -64,8 +68,8 @@ export class MockGitHubClient {
     this.delayMs = delayMs;
   }
 
-  // Override methods for mocking
-  async getPRInfo(owner: string, repo: string, prNumber: number): Promise<PRInfo> {
+  // Private implementation methods that jest mocks will call
+  async _getPRInfo(owner: string, repo: string, prNumber: number): Promise<PRInfo> {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, this.delayMs));
 
@@ -95,7 +99,7 @@ export class MockGitHubClient {
     return mockPR;
   }
 
-  async getPRDiff(owner: string, repo: string, prNumber: number): Promise<string> {
+  async _getPRDiff(owner: string, repo: string, prNumber: number): Promise<string> {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, this.delayMs));
 
