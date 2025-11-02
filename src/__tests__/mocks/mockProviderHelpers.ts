@@ -30,7 +30,7 @@ export class MockProvider implements IProvider {
     this.delayMs = delayMs;
   }
 
-  async analyzeCode(diff: string, context: ReviewContext): Promise<ReviewResult> {
+  async analyzeCode(_diff: string, _context: ReviewContext): Promise<ReviewResult> {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, this.delayMs + Math.random() * 200));
 
@@ -212,7 +212,7 @@ export const createMalformedGeminiProvider = (): MockProvider => {
 export const createIntermittentFailureProvider = (
   name: string,
   failureCount: number = 1,
-  totalRequests: number = 3
+  _totalRequests: number = 3
 ): MockProvider => {
   return new MockProvider(name, 'basic-review', true, 'Intermittent failure', 'error', failureCount);
 };

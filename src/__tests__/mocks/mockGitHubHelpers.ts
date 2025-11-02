@@ -301,7 +301,7 @@ File: src/index.ts
  # Code Review Action
 
 -A simple code review action.
-\ No newline at end of file
+No newline at end of file
 +A simple code review action.
 +
 +## Usage

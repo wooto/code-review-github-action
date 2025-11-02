@@ -1,5 +1,5 @@
-import { ConfigurableProvider, ProviderConfig } from '../BaseProvider';
-import { ReviewContext, ReviewResult, ReviewSuggestion } from '../IProvider';
+import { ConfigurableProvider } from '../BaseProvider';
+import { ReviewContext, ReviewResult } from '../IProvider';
 import OpenAI from 'openai';
 
 export interface OpenAIConfig {
@@ -47,7 +47,7 @@ export class OpenAIProvider extends ConfigurableProvider {
       // Simple health check - list models
       await client.models.list();
       return true;
-    } catch (error) {
+    } catch {
       // Sanitize error message to prevent security leaks
       console.warn('OpenAI health check failed');
       return false;
@@ -94,7 +94,7 @@ export class OpenAIProvider extends ConfigurableProvider {
       }
 
       return this.parseResponse(content);
-    } catch (error) {
+    } catch {
       // Sanitize error message to prevent security leaks
       throw new Error('OpenAI API error: Request failed');
     } finally {
@@ -164,7 +164,7 @@ Provide your response in this JSON format:
         suggestions: parsed.suggestions || [],
         confidence: 0.8
       };
-    } catch (error) {
+    } catch {
       // Fallback if JSON parsing fails
       return {
         summary: content,

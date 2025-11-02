@@ -1,8 +1,8 @@
 // Integration tests for the complete AI Code Review Action using mock infrastructure
 import { run } from '../../index';
 import { MockGitHubClient } from '../mocks/mockGitHubHelpers';
-import { MockProvider, createMockOpenAIProvider, createMockClaudeProvider, createMockGeminiProvider, createFailingOpenAIProvider, createFailingClaudeProvider } from '../mocks/mockProviderHelpers';
-import { INTEGRATION_TEST_SCENARIOS, getScenario, TestScenario } from '../scenarios/reviewScenarioDefinitions';
+import { MockProvider, createMockOpenAIProvider, createMockClaudeProvider, createMockGeminiProvider } from '../mocks/mockProviderHelpers';
+import { getScenario, TestScenario } from '../scenarios/reviewScenarioDefinitions';
 
 // Mock external dependencies
 jest.mock('@actions/core');
@@ -48,7 +48,7 @@ describe('Action Integration Tests - Full Execution Flow', () => {
     mockSetOutput = core.setOutput as jest.MockedFunction<typeof core.setOutput>;
 
     // Setup default core mock implementations
-    mockGetInput.mockImplementation((name) => 'test-token');
+    mockGetInput.mockImplementation((_name) => 'test-token');
     mockGetMultilineInput.mockReturnValue(['test-key']);
     mockInfo.mockImplementation(() => {});
     mockWarning.mockImplementation(() => {});

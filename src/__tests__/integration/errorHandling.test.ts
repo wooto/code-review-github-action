@@ -9,18 +9,11 @@ import {
   createTimeoutClaudeProvider,
   createTimeoutGeminiProvider,
   createRateLimitOpenAIProvider,
-  createRateLimitClaudeProvider,
-  createRateLimitGeminiProvider,
   createNetworkErrorOpenAIProvider,
   createNetworkErrorClaudeProvider,
-  createNetworkErrorGeminiProvider,
   createMalformedOpenAIProvider,
   createMalformedClaudeProvider,
-  createMalformedGeminiProvider,
-  createIntermittentFailureProvider,
-  createSlowOpenAIProvider,
-  createSlowClaudeProvider,
-  createSlowGeminiProvider
+  createIntermittentFailureProvider
 } from '../mocks/mockProviderHelpers';
 
 // Mock external dependencies
@@ -36,9 +29,6 @@ jest.mock('../../diff/DiffProcessor');
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { GitHubClient } from '../../github/GitHubClient';
-import { OpenAIProvider } from '../../providers/openai/OpenAIProvider';
-import { ClaudeProvider } from '../../providers/claude/ClaudeProvider';
-import { GeminiProvider } from '../../providers/gemini/GeminiProvider';
 import { ProviderManager } from '../../providers/ProviderManager';
 import { DiffProcessor } from '../../diff/DiffProcessor';
 
@@ -118,7 +108,7 @@ describe('Error Handling and Edge Cases', () => {
         branch: 'feature-branch',
         files: ['src/test.ts']
       }),
-      filterFiles: jest.fn().mockImplementation((files: string[], patterns: string[]) => files)
+      filterFiles: jest.fn().mockImplementation((files: string[], _patterns: string[]) => files)
     } as any;
 
     (DiffProcessor as jest.Mock).mockImplementation(() => mockDiffProcessor);
@@ -323,8 +313,6 @@ describe('Error Handling and Edge Cases', () => {
     });
 
     it('should handle multiple providers with rate limiting', async () => {
-      const rateLimitOpenAI = createRateLimitOpenAIProvider();
-      const rateLimitClaude = createRateLimitClaudeProvider();
 
       const mockProviderManager = {
         analyzeCode: jest.fn().mockImplementation(async () => {

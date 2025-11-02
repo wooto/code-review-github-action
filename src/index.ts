@@ -295,34 +295,6 @@ function generateReviewComment(suggestions: any[], prInfo: any): string {
   return comment;
 }
 
-function generateSummary(results: any[]): string {
-  const totalFiles = results.length;
-  const totalIssues = results.reduce(
-    (sum, result) => sum + result.analysis.issues.length,
-    0,
-  );
-
-  let summary = `## Code Review Summary\n\n`;
-  summary += `- **Files reviewed**: ${totalFiles}\n`;
-  summary += `- **Issues found**: ${totalIssues}\n\n`;
-
-  if (totalIssues > 0) {
-    summary += `### Issues Found:\n\n`;
-    results.forEach((result) => {
-      if (result.analysis.issues.length > 0) {
-        summary += `#### ${result.file}\n`;
-        result.analysis.issues.forEach((issue: any) => {
-          summary += `- ${issue.severity}: ${issue.message} (line ${issue.line})\n`;
-        });
-        summary += "\n";
-      }
-    });
-  } else {
-    summary += `✅ No issues found! Great job!\n`;
-  }
-
-  return summary;
-}
 
 if (require.main === module) {
   run();
