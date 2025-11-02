@@ -1,0 +1,118 @@
+{
+  "scenarios": {
+    "basic-review": {
+      "description": "Standard PR review with typical code changes",
+      "prTitle": "Add basic data processing function",
+      "branch": "feature/basic-review",
+      "prNumber": 123,
+      "changes": [
+        {
+          "file": "src/app.js",
+          "content": "function processData(data) {\n    return data.map(item => item.value);\n}"
+        }
+      ],
+      "expectedFocus": ["security", "performance", "style"],
+      "mockResponses": true
+    },
+    "security-issues": {
+      "description": "PR containing security vulnerabilities and anti-patterns",
+      "prTitle": "Add security-sensitive code",
+      "branch": "feature/security-issues",
+      "prNumber": 124,
+      "changes": [
+        {
+          "file": "src/app.js",
+          "content": "// Security issue: eval usage\nfunction executeCode(code) {\n    return eval(code);\n}\n\n// Security issue: hardcoded password\nconst password = \"admin123\";\n\n// Security issue: SQL injection vulnerable\nfunction getUser(id) {\n    return `SELECT * FROM users WHERE id = ${id}`;\n}"
+        }
+      ],
+      "expectedFocus": ["security"],
+      "mockResponses": true,
+      "expectedFindings": ["eval usage", "hardcoded password", "SQL injection"]
+    },
+    "performance-issues": {
+      "description": "PR with performance bottlenecks and inefficient code",
+      "prTitle": "Add performance-critical code",
+      "branch": "feature/performance-issues",
+      "prNumber": 125,
+      "changes": [
+        {
+          "file": "src/app.js",
+          "content": "// Performance issue: inefficient loop\nfunction processLargeArray(items) {\n    const results = [];\n    for (let i = 0; i < items.length; i++) {\n        results.push(items[i].toUpperCase());\n    }\n    return results;\n}\n\n// Performance issue: memory leak\nconst cache = new Map();\nfunction cacheData(key, data) {\n    cache.set(key, data);\n    // No cleanup mechanism\n}"
+        }
+      ],
+      "expectedFocus": ["performance"],
+      "mockResponses": true,
+      "expectedFindings": ["inefficient loop", "memory leak"]
+    },
+    "no-issues": {
+      "description": "PR with clean, well-written code",
+      "prTitle": "Add clean code example",
+      "branch": "feature/no-issues",
+      "prNumber": 126,
+      "changes": [
+        {
+          "file": "src/app.js",
+          "content": "// Clean, well-written code\nfunction calculateTotal(items) {\n    return items.reduce((sum, item) => sum + item.price, 0);\n}\n\n// Proper error handling\nfunction fetchUserData(userId) {\n    if (!userId) {\n        throw new Error('User ID is required');\n    }\n    return { id: userId, name: 'Test User' };\n}"
+        }
+      ],
+      "expectedFocus": ["security", "performance", "style"],
+      "mockResponses": true,
+      "expectedFindings": []
+    },
+    "provider-failure": {
+      "description": "Test error handling with invalid API keys",
+      "prTitle": "Provider failure test",
+      "branch": "feature/basic-review",
+      "prNumber": 128,
+      "changes": [
+        {
+          "file": "src/app.js",
+          "content": "function processData(data) {\n    return data.map(item => item.value);\n}"
+        }
+      ],
+      "expectedFocus": ["security", "performance", "style"],
+      "mockResponses": true,
+      "simulateFailures": true,
+      "invalidApiKeys": true
+    },
+    "multi-provider": {
+      "description": "Test coordination between multiple AI providers",
+      "prTitle": "Multi-provider test",
+      "branch": "feature/basic-review",
+      "prNumber": 127,
+      "changes": [
+        {
+          "file": "src/app.js",
+          "content": "function processData(data) {\n    return data.map(item => item.value);\n}"
+        }
+      ],
+      "expectedFocus": ["security", "performance", "style"],
+      "mockResponses": true,
+      "providers": ["openai", "claude", "gemini"]
+    }
+  },
+  "providers": {
+    "openai": {
+      "testKey": "sk-test-key-1,sk-test-key-2",
+      "mockResponses": true,
+      "capabilities": ["security", "performance", "style", "documentation"]
+    },
+    "claude": {
+      "testKey": "sk-ant-test-key-1",
+      "mockResponses": true,
+      "capabilities": ["security", "performance", "style", "architecture"]
+    },
+    "gemini": {
+      "testKey": "gemini-test-key-1",
+      "mockResponses": true,
+      "capabilities": ["security", "performance", "style", "best-practices"]
+    }
+  },
+  "globalConfig": {
+    "chunkSize": 2000,
+    "skipPatterns": ["*.min.js", "package-lock.json", "dist/"],
+    "failFast": false,
+    "mockMode": true,
+    "verificationMode": true
+  }
+}
