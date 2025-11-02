@@ -40,13 +40,13 @@ export class MockProvider implements IProvider {
 
       switch (this.failureType) {
         case 'timeout':
-          throw new Error(`${this.name} API timeout: Request timed out after 30000ms`);
+          throw new Error(`${this.name} API timeout`);
 
         case 'rate-limit':
-          throw new Error(`${this.name} API rate limit exceeded: Retry after ${Math.floor(Math.random() * 60) + 1} seconds`);
+          throw new Error(`${this.name} API rate limit exceeded`);
 
         case 'network':
-          throw new Error(`${this.name} Network error: Unable to reach API endpoint`);
+          throw new Error(`${this.name} Network error`);
 
         case 'malformed':
           // Return malformed data that might cause issues downstream

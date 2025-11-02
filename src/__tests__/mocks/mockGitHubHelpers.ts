@@ -1,6 +1,6 @@
-import { GitHubClient, PRInfo, ReviewComment } from '../../github/GitHubClient';
+import { PRInfo, ReviewComment } from '../../github/GitHubClient';
 
-export class MockGitHubClient extends GitHubClient {
+export class MockGitHubClient {
   private mockPRs: Map<string, PRInfo> = new Map();
   private mockDiffs: Map<string, string> = new Map();
   private shouldFail: boolean = false;
@@ -11,9 +11,18 @@ export class MockGitHubClient extends GitHubClient {
   private delayMs: number = 100;
   private createdComments: ReviewComment[] = [];
   private createdReviews: Array<{body: string, comments: ReviewComment[]}> = [];
+  private token: string;
+
+  // Mock methods
+  public createReviewComment: jest.MockedFunction<(owner: string, repo: string, prNumber: number, body: string, comments?: ReviewComment[]) => Promise<void>>;
+  public createReviewCommentThread: jest.MockedFunction<(owner: string, repo: string, prNumber: number, comment: ReviewComment) => Promise<void>>;
 
   constructor(token?: string) {
-    super(token || 'mock-token');
+    this.token = token || 'mock-token';
+
+    // Initialize mock methods
+    this.createReviewComment = jest.fn().mockImplementation(this._createReviewComment.bind(this));
+    this.createReviewCommentThread = jest.fn().mockImplementation(this._createReviewCommentThread.bind(this));
   }
 
   // Setup methods for testing
@@ -124,7 +133,7 @@ export class MockGitHubClient extends GitHubClient {
  }`;
   }
 
-  async createReviewComment(
+  async _createReviewComment(
     owner: string,
     repo: string,
     prNumber: number,
@@ -156,7 +165,7 @@ export class MockGitHubClient extends GitHubClient {
     });
   }
 
-  async createReviewCommentThread(
+  async _createReviewCommentThread(
     owner: string,
     repo: string,
     prNumber: number,
