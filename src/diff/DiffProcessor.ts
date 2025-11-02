@@ -139,12 +139,41 @@ export class DiffProcessor {
 
   private extractFiles(diff: string): string[] {
     try {
-      const fileRegex = /^File:\s*(.+)$/gm;
-      const files = [];
-      let match;
+      const files: string[] = [];
 
-      while ((match = fileRegex.exec(diff)) !== null) {
-        files.push(match[1]);
+      // Try multiple regex patterns to extract file names from different diff formats
+      const patterns = [
+        /^File:\s*(.+)$/gm,                    // "File: path/to/file.js"
+        /^diff --git a\/(.+) b\/(.+)$/gm,       // "diff --git a/src/app.js b/src/app.js"
+        /^--- a\/(.+)$/gm,                     // "--- a/src/index.js"
+        /^\+\+\+ b\/(.+)$/gm,                  // "+++ b/src/index.js"
+        /^rename from (.+)$/gm,                // "rename from old/path.js"
+        /^rename to (.+)$/gm                   // "rename to new/path.js"
+      ];
+
+      for (const pattern of patterns) {
+        let match: RegExpExecArray | null;
+        while ((match = pattern.exec(diff)) !== null) {
+          // For diff --git patterns, we might get two captures (old and new)
+          const filePath = match[1] || match[2];
+          if (filePath && !files.includes(filePath)) {
+            files.push(filePath);
+          }
+        }
+      }
+
+      // If no files found, try to extract from the first few lines
+      if (files.length === 0) {
+        const lines = diff.split('\n').slice(0, 10);
+        for (const line of lines) {
+          if (line.includes('/') && (line.includes('.js') || line.includes('.ts') || line.includes('.jsx') || line.includes('.tsx'))) {
+            // Extract potential file paths
+            const potentialFile = line.match(/([a-zA-Z0-9_\-\/\.]+\.(js|ts|jsx|tsx|json|md|yml|yaml))/);
+            if (potentialFile && !files.includes(potentialFile[1])) {
+              files.push(potentialFile[1]);
+            }
+          }
+        }
       }
 
       return files;

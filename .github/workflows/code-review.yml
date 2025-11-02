@@ -36,4 +36,5 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           gemini-api-keys: ${{ secrets.GEMINI_API_KEYS }}
           providers: gemini
-          review-focus: security,performance,style
+          review-focus: security,performance,style,correctness,maintainability
+          chunk-size: '1500'
