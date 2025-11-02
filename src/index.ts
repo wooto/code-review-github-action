@@ -11,10 +11,30 @@ import { IProvider } from "./providers/IProvider";
 async function run(): Promise<void> {
   try {
     console.log("🔍 DEBUG: Starting run function");
-    // Get inputs
-    const token = core.getInput("github-token", { required: true });
+    // Get inputs with defensive error handling
+    let token: string;
+    let providersInput: string;
+
+    token = core.getInput("github-token");
+    console.log("🔍 DEBUG: Got token via core.getInput:", !!token);
+
+    // If core.getInput() returns empty, try environment variables
+    if (!token || token.trim().length === 0) {
+      console.log("🔍 DEBUG: Token empty, trying environment variables");
+      console.log("🔍 DEBUG: INPUT_GITHUB_TOKEN:", !!process.env.INPUT_GITHUB_TOKEN);
+      console.log("🔍 DEBUG: GITHUB_TOKEN:", !!process.env.GITHUB_TOKEN);
+      token = (process.env.INPUT_GITHUB_TOKEN || process.env.GITHUB_TOKEN || "");
+      console.log("🔍 DEBUG: Got token via env:", !!token);
+    }
+
+    try {
+      providersInput = core.getInput("providers");
+    } catch (error) {
+      console.log("🔍 DEBUG: Error getting providers input:", error);
+      providersInput = process.env.INPUT_PROVIDERS || "";
+    }
+
     console.log("🔍 DEBUG: Got token:", !!token);
-    const providersInput = core.getInput("providers", { required: true });
     console.log("🔍 DEBUG: Got providers:", providersInput);
     const chunkSizeInput = core.getInput("chunk-size", { required: false }) || "2000";
     const reviewFocusInput = core.getInput("review-focus", { required: false }) || "security,performance,style";
