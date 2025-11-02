@@ -10,54 +10,72 @@ import { IProvider } from "./providers/IProvider";
 
 async function run(): Promise<void> {
   try {
+    console.log("🔍 DEBUG: Starting run function");
     // Get inputs
-    const token = core.getInput("github_token", { required: true });
+    const token = core.getInput("github-token", { required: true });
+    console.log("🔍 DEBUG: Got token:", !!token);
     const providersInput = core.getInput("providers", { required: true });
+    console.log("🔍 DEBUG: Got providers:", providersInput);
     const chunkSizeInput = core.getInput("chunk-size", { required: false }) || "2000";
-    const apiKeyInputs = core.getMultilineInput("api_keys", { required: false });
 
     const chunkSize = parseInt(chunkSizeInput, 10);
+    console.log("🔍 DEBUG: Parsed chunk size:", chunkSize);
     if (isNaN(chunkSize) || chunkSize <= 0) {
+      console.log("🔍 DEBUG: Invalid chunk size, failing");
       core.setFailed("Chunk size must be a positive number");
       return;
     }
 
     // Validate inputs
     if (!token || token.trim().length === 0) {
+      console.log("🔍 DEBUG: Invalid token, failing");
       core.setFailed("GitHub token is required and cannot be empty");
       return;
     }
 
     if (!providersInput || providersInput.trim().length === 0) {
+      console.log("🔍 DEBUG: Invalid providers, failing");
       core.setFailed("Providers list is required and cannot be empty");
       return;
     }
 
     const context = github.context;
+    console.log("🔍 DEBUG: GitHub context:", !!context, !!context.payload);
+    console.log("🔍 DEBUG: Pull request:", !!context.payload?.pull_request);
     if (!context.payload.pull_request) {
+      console.log("🔍 DEBUG: No pull request context, failing");
       core.setFailed("This action only works on pull requests");
       return;
     }
 
     // Parse providers and create provider instances
+    console.log("🔍 DEBUG: Parsing providers");
     const providerNames = providersInput.split(',').map(p => p.trim().toLowerCase());
     const supportedProviders = ['openai', 'claude', 'gemini'];
     const invalidProviders = providerNames.filter(p => !supportedProviders.includes(p));
+    console.log("🔍 DEBUG: Provider names:", providerNames);
+    console.log("🔍 DEBUG: Invalid providers:", invalidProviders);
 
     if (invalidProviders.length > 0) {
+      console.log("🔍 DEBUG: Invalid providers found, failing");
       core.setFailed(`Unsupported providers: ${invalidProviders.join(', ')}. Supported providers: ${supportedProviders.join(', ')}.`);
       return;
     }
 
     // Create provider instances
+    console.log("🔍 DEBUG: Creating provider instances");
     const providers: IProvider[] = [];
-    const apiKeys = apiKeyInputs.length > 0 ? apiKeyInputs : [token];
 
     for (let i = 0; i < providerNames.length; i++) {
       const providerName = providerNames[i];
-      const apiKey = apiKeys[i] || apiKeys[0];
+      console.log(`🔍 DEBUG: Processing provider: ${providerName}`);
+      // Get provider-specific API keys
+      const providerApiKeys = core.getMultilineInput(`${providerName}-api-keys`, { required: false });
+      const apiKey = providerApiKeys.length > 0 ? providerApiKeys[0] : token;
+      console.log(`🔍 DEBUG: API keys for ${providerName}:`, providerApiKeys.length);
 
       try {
+        console.log(`🔍 DEBUG: Creating provider ${providerName}`);
         let provider: IProvider | null = null;
 
         switch (providerName) {
@@ -66,7 +84,7 @@ async function run(): Promise<void> {
             if ((OpenAIProvider as any).getMockImplementation && (OpenAIProvider as any).getMockImplementation()) {
               // Provider is mocked, create with minimal config
               provider = new OpenAIProvider({
-                apiKeys: [apiKey],
+                apiKeys: providerApiKeys.length > 0 ? providerApiKeys : [apiKey],
                 model: 'gpt-4',
                 maxTokens: 4000,
                 temperature: 0.1,
@@ -74,7 +92,7 @@ async function run(): Promise<void> {
               });
             } else {
               provider = new OpenAIProvider({
-                apiKeys: [apiKey],
+                apiKeys: providerApiKeys.length > 0 ? providerApiKeys : [apiKey],
                 model: 'gpt-4',
                 maxTokens: 4000,
                 temperature: 0.1,
@@ -85,7 +103,7 @@ async function run(): Promise<void> {
           case 'claude':
             if ((ClaudeProvider as any).getMockImplementation && (ClaudeProvider as any).getMockImplementation()) {
               provider = new ClaudeProvider({
-                apiKeys: [apiKey],
+                apiKeys: providerApiKeys.length > 0 ? providerApiKeys : [apiKey],
                 model: 'claude-3-sonnet-20240229',
                 maxTokens: 4000,
                 temperature: 0.1,
@@ -93,7 +111,7 @@ async function run(): Promise<void> {
               });
             } else {
               provider = new ClaudeProvider({
-                apiKeys: [apiKey],
+                apiKeys: providerApiKeys.length > 0 ? providerApiKeys : [apiKey],
                 model: 'claude-3-sonnet-20240229',
                 maxTokens: 4000,
                 temperature: 0.1,
@@ -104,7 +122,7 @@ async function run(): Promise<void> {
           case 'gemini':
             if ((GeminiProvider as any).getMockImplementation && (GeminiProvider as any).getMockImplementation()) {
               provider = new GeminiProvider({
-                apiKeys: [apiKey],
+                apiKeys: providerApiKeys.length > 0 ? providerApiKeys : [apiKey],
                 model: 'gemini-pro',
                 maxTokens: 4000,
                 temperature: 0.1,
@@ -112,7 +130,7 @@ async function run(): Promise<void> {
               });
             } else {
               provider = new GeminiProvider({
-                apiKeys: [apiKey],
+                apiKeys: providerApiKeys.length > 0 ? providerApiKeys : [apiKey],
                 model: 'gemini-pro',
                 maxTokens: 4000,
                 temperature: 0.1,
@@ -123,9 +141,13 @@ async function run(): Promise<void> {
         }
 
         if (provider) {
+          console.log(`🔍 DEBUG: Successfully created provider ${providerName}`);
           providers.push(provider);
+        } else {
+          console.log(`🔍 DEBUG: Provider ${providerName} is null`);
         }
       } catch (error) {
+        console.log(`🔍 DEBUG: Failed to initialize ${providerName} provider:`, error);
         core.warning(`Failed to initialize ${providerName} provider: ${error}`);
       }
     }
