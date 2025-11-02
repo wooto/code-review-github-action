@@ -67,7 +67,14 @@ describe('Error Handling and Edge Cases', () => {
     mockSetOutput = core.setOutput as jest.MockedFunction<typeof core.setOutput>;
 
     // Setup default core mock implementations
-    mockGetInput.mockImplementation((name) => 'test-token');
+    mockGetInput.mockImplementation((name) => {
+      switch (name) {
+        case 'providers': return 'openai,claude,gemini';
+        case 'chunk-size': return '2000';
+        case 'github-token': return 'test-token';
+        default: return 'test-token';
+      }
+    });
     mockGetMultilineInput.mockReturnValue(['test-key']);
     mockInfo.mockImplementation(() => {});
     mockWarning.mockImplementation(() => {});
@@ -124,6 +131,29 @@ describe('Error Handling and Edge Cases', () => {
       mockGitHubClient.resetFailures();
       mockGitHubClient.clearCreatedData();
     }
+
+    // Reset all core mocks to prevent state bleeding
+    mockGetInput.mockClear();
+    mockGetMultilineInput.mockClear();
+    mockInfo.mockClear();
+    mockWarning.mockClear();
+    mockSetFailed.mockClear();
+    mockSetOutput.mockClear();
+
+    // Reset default implementations
+    mockGetInput.mockImplementation((name) => {
+      switch (name) {
+        case 'providers': return 'openai,claude,gemini';
+        case 'chunk-size': return '2000';
+        case 'github-token': return 'test-token';
+        default: return 'test-token';
+      }
+    });
+    mockGetMultilineInput.mockReturnValue(['test-key']);
+    mockInfo.mockImplementation(() => {});
+    mockWarning.mockImplementation(() => {});
+    mockSetFailed.mockImplementation(() => {});
+    mockSetOutput.mockImplementation(() => {});
   });
 
   describe('API Timeout Scenarios', () => {
@@ -493,35 +523,45 @@ describe('Error Handling and Edge Cases', () => {
 
       await run();
 
-      // Should handle invalid chunk size gracefully
-      expect(mockSetFailed).not.toHaveBeenCalled();
+      // Should handle invalid chunk size gracefully - now with validation
+      expect(mockSetFailed).toHaveBeenCalledWith(
+        'Chunk size must be a positive number'
+      );
     });
 
     it('should handle empty provider list', async () => {
       mockGetInput.mockImplementation((name) => {
-        if (name === 'providers') return '';
-        return 'test-token';
+        switch (name) {
+          case 'providers': return '';
+          case 'chunk-size': return '2000';
+          case 'github-token': return 'test-token';
+          default: return '';
+        }
       });
       mockGetMultilineInput.mockReturnValue(['sk-test-key']);
 
       await run();
 
       expect(mockSetFailed).toHaveBeenCalledWith(
-        'No valid providers configured. Please provide at least one API key.'
+        'Providers list is required and cannot be empty'
       );
     });
 
     it('should handle invalid provider names', async () => {
       mockGetInput.mockImplementation((name) => {
-        if (name === 'providers') return 'invalid-provider,another-invalid';
-        return 'test-token';
+        switch (name) {
+          case 'providers': return 'invalid-provider,another-invalid';
+          case 'chunk-size': return '2000';
+          case 'github-token': return 'test-token';
+          default: return 'test-token';
+        }
       });
       mockGetMultilineInput.mockReturnValue(['sk-test-key']);
 
       await run();
 
       expect(mockSetFailed).toHaveBeenCalledWith(
-        'No valid providers configured. Please provide at least one API key.'
+        'Unsupported providers: invalid-provider, another-invalid. Supported providers: openai, claude, gemini.'
       );
     });
 
@@ -530,16 +570,20 @@ describe('Error Handling and Edge Cases', () => {
         if (name === 'github-token') return '';
         return '';
       });
+      mockGetMultilineInput.mockReturnValue([]);
 
       await run();
 
       // Should fail due to missing required inputs
-      expect(mockSetFailed).toHaveBeenCalled();
+      expect(mockSetFailed).toHaveBeenCalledWith(
+        'GitHub token is required and cannot be empty'
+      );
     });
   });
 
   describe('Data Processing Edge Cases', () => {
     it('should handle extremely large diffs', async () => {
+
       // Mock very large diff
       const largeDiff = 'File: src/large.ts\n' + '@@ -1,1000 +1,2000 @@\n' +
         Array.from({ length: 5000 }, (_, i) => `+ line ${i}: very long content that makes the diff large`).join('\n');
@@ -574,6 +618,7 @@ describe('Error Handling and Edge Cases', () => {
     });
 
     it('should handle diff with only whitespace changes', async () => {
+
       mockGitHubClient.addMockDiff('test-owner', 'test-repo', 123, `File: src/test.ts
 @@ -1,5 +1,5 @@
 
@@ -592,6 +637,7 @@ describe('Error Handling and Edge Cases', () => {
     });
 
     it('should handle diff with binary files', async () => {
+
       mockGitHubClient.addMockDiff('test-owner', 'test-repo', 123, `File: binary/image.png
 Binary files differ
 
@@ -612,6 +658,7 @@ File: src/test.ts
 
   describe('Resource Exhaustion Scenarios', () => {
     it('should handle memory pressure scenarios', async () => {
+
       // Mock many chunks to simulate memory pressure
       const mockDiffProcessor = new DiffProcessor() as jest.Mocked<DiffProcessor>;
       const chunks = Array.from({ length: 100 }, (_, i) => ({
@@ -644,6 +691,7 @@ File: src/test.ts
     });
 
     it('should handle concurrent request limits', async () => {
+
       // This test simulates hitting concurrent request limits
       let concurrentRequests = 0;
       const maxConcurrent = 5;
@@ -767,9 +815,13 @@ File: src/test.ts
       const longString = 'a'.repeat(100000);
 
       mockGetInput.mockImplementation((name) => {
-        if (name === 'custom-prompt') return longString;
-        if (name === 'providers') return 'openai';
-        return 'test-token';
+        switch (name) {
+          case 'custom-prompt': return longString;
+          case 'providers': return 'openai';
+          case 'chunk-size': return '2000';
+          case 'github-token': return 'test-token';
+          default: return 'test-token';
+        }
       });
       mockGetMultilineInput.mockReturnValue(['sk-test-key']);
 
@@ -783,9 +835,13 @@ File: src/test.ts
       const specialChars = '!@#$%^&*()_+-=[]{}|;:,.<>?`~"\n\t\\';
 
       mockGetInput.mockImplementation((name) => {
-        if (name === 'custom-prompt') return specialChars;
-        if (name === 'providers') return 'openai';
-        return 'test-token';
+        switch (name) {
+          case 'custom-prompt': return specialChars;
+          case 'providers': return 'openai';
+          case 'chunk-size': return '2000';
+          case 'github-token': return 'test-token';
+          default: return 'test-token';
+        }
       });
       mockGetMultilineInput.mockReturnValue(['sk-test-key']);
 
@@ -799,9 +855,13 @@ File: src/test.ts
       const unicodeText = '🤖 AI Code Review with 中文, العربية, 한국어, עברית';
 
       mockGetInput.mockImplementation((name) => {
-        if (name === 'custom-prompt') return unicodeText;
-        if (name === 'providers') return 'openai';
-        return 'test-token';
+        switch (name) {
+          case 'custom-prompt': return unicodeText;
+          case 'providers': return 'openai';
+          case 'chunk-size': return '2000';
+          case 'github-token': return 'test-token';
+          default: return 'test-token';
+        }
       });
       mockGetMultilineInput.mockReturnValue(['sk-test-key']);
 
@@ -815,9 +875,13 @@ File: src/test.ts
       const malformedJson = '{"invalid": json structure "missing": quotes}';
 
       mockGetInput.mockImplementation((name) => {
-        if (name === 'custom-prompt') return malformedJson;
-        if (name === 'providers') return 'openai';
-        return 'test-token';
+        switch (name) {
+          case 'custom-prompt': return malformedJson;
+          case 'providers': return 'openai';
+          case 'chunk-size': return '2000';
+          case 'github-token': return 'test-token';
+          default: return 'test-token';
+        }
       });
       mockGetMultilineInput.mockReturnValue(['sk-test-key']);
 

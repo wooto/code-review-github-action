@@ -12,16 +12,31 @@ async function run(): Promise<void> {
   try {
     // Get inputs
     const githubToken = core.getInput('github-token', { required: true });
-    const providersInput = core.getInput('providers') || 'openai,claude,gemini';
+    const rawProvidersInput = core.getInput('providers');
+    const providersInput = rawProvidersInput || 'openai,claude,gemini';
     const reviewFocus = core.getInput('review-focus') || 'security,performance,style';
-    const chunkSize = parseInt(core.getInput('chunk-size') || '2000');
+    const chunkSizeInput = core.getInput('chunk-size') || '2000';
     const customPrompt = core.getInput('custom-prompt');
     const skipPatterns = core.getInput('skip-patterns')?.split(',') || [];
 
+    // Validate inputs
+    if (!githubToken || githubToken.trim() === '') {
+      throw new Error('GitHub token is required and cannot be empty');
+    }
+
+    if (!rawProvidersInput || rawProvidersInput.trim() === '') {
+      throw new Error('Providers list is required and cannot be empty');
+    }
+
+    const chunkSize = parseInt(chunkSizeInput);
+    if (isNaN(chunkSize) || chunkSize <= 0) {
+      throw new Error('Chunk size must be a positive number');
+    }
+
     // Get API keys arrays
-    const openaiKeys = core.getMultilineInput('openai-api-keys');
-    const claudeKeys = core.getMultilineInput('claude-api-keys');
-    const geminiKeys = core.getMultilineInput('gemini-api-keys');
+    const openaiKeys = core.getMultilineInput('openai-api-keys').filter(key => key.trim() !== '');
+    const claudeKeys = core.getMultilineInput('claude-api-keys').filter(key => key.trim() !== '');
+    const geminiKeys = core.getMultilineInput('gemini-api-keys').filter(key => key.trim() !== '');
 
     // Get PR context
     const context = github.context;
@@ -51,7 +66,23 @@ async function run(): Promise<void> {
 
     // Initialize providers
     const providers = [];
-    const enabledProviders = providersInput.split(',').map(p => p.trim().toLowerCase());
+
+    // Clean and validate providers input
+    const enabledProviders = providersInput
+      .split(',')
+      .map(p => p.trim().toLowerCase())
+      .filter(p => p.length > 0); // Remove empty strings
+
+    if (enabledProviders.length === 0) {
+      throw new Error('No valid providers specified. Please provide at least one provider (openai, claude, or gemini).');
+    }
+
+    // Validate supported providers
+    const supportedProviders = ['openai', 'claude', 'gemini'];
+    const invalidProviders = enabledProviders.filter(p => !supportedProviders.includes(p));
+    if (invalidProviders.length > 0) {
+      throw new Error(`Unsupported providers: ${invalidProviders.join(', ')}. Supported providers: ${supportedProviders.join(', ')}.`);
+    }
 
     if (enabledProviders.includes('openai') && openaiKeys.length > 0) {
       providers.push(new OpenAIProvider({ apiKeys: openaiKeys }));
@@ -66,7 +97,7 @@ async function run(): Promise<void> {
     }
 
     if (providers.length === 0) {
-      throw new Error('No valid providers configured. Please provide at least one API key.');
+      throw new Error('No valid providers configured. Please provide at least one API key for the specified providers.');
     }
 
     const providerManager = new ProviderManager(providers);
