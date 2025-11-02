@@ -4,7 +4,7 @@ describe('CommentFormatter', () => {
   test('should format high severity security comment', () => {
     const formatter = new CommentFormatter();
     const suggestion: Suggestion = {
-      severity: 'high',
+      severity: 'high' as const,
       category: 'security',
       message: 'SQL injection vulnerability',
       suggestion: 'Use parameterized queries',
