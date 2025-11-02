@@ -98,3 +98,25 @@ pids
 
 # Stores VSCode versions used for testing VSCode extensions
 .vscode-test
+
+# Worktree directory
+.worktrees/
+
+# Analysis and temporary report files
+*_ANALYSIS.md
+*_REPORT.md
+*_SUMMARY.md
+*.coverage-report
+
+# Editor backup files
+*.bak
+*.backup
+*.orig
+
+# System and temp files
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
