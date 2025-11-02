@@ -53,10 +53,10 @@ describe('Integration Tests - Complete Workflow', () => {
 
     // Setup GitHub context
     (github.context as any) = {
-      repo: {
+      repo: () => ({
         owner: 'test-owner',
         repo: 'test-repo'
-      },
+      }),
       payload: {
         pull_request: {
           number: 123,
