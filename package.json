@@ -4,10 +4,11 @@
   "description": "Multi-provider AI code review GitHub Action",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && ncc build src/index.ts -o dist",
+    "build:only": "ncc build src/index.ts -o dist",
     "test": "jest",
     "lint": "eslint src/**/*.ts",
-    "package": "ncc build src/index.ts -o dist"
+    "package": "npm run build"
   },
   "keywords": [
     "github-action",
