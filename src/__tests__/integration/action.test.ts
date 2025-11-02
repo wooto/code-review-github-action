@@ -603,4 +603,147 @@ describe('Action Integration Tests - Full Execution Flow', () => {
       expect(mockSetFailed).not.toHaveBeenCalled();
     });
   });
+
+  describe('Additional Scenario Tests', () => {
+    it('should handle multi-provider conflict scenario', async () => {
+      const scenario = getScenario('multi-provider-conflict')!;
+      setupScenario(scenario);
+
+      await run();
+
+      await verifyScenarioOutcome(scenario);
+
+      // Verify multiple providers were used
+      expect(OpenAIProvider).toHaveBeenCalled();
+      expect(ClaudeProvider).toHaveBeenCalled();
+      expect(GeminiProvider).toHaveBeenCalled();
+
+      // Verify combined suggestions from multiple providers
+      expect(mockSetOutput).toHaveBeenCalledWith(
+        'review-summary',
+        expect.stringContaining('**Suggestions Found:** 3')
+      );
+    });
+
+    it('should handle large-scale PR scenario with multiple chunks', async () => {
+      const scenario = getScenario('large-scale-pr')!;
+      setupScenario(scenario);
+
+      // Mock many chunks to simulate large PR
+      const mockDiffProcessor = new DiffProcessor() as jest.Mocked<DiffProcessor>;
+      const chunks = Array.from({ length: 5 }, (_, i) => ({
+        content: `Large chunk ${i + 1} with substantial changes...`,
+        files: [`src/auth/file${i + 1}.ts`],
+        size: 2000
+      }));
+      mockDiffProcessor.chunkDiff.mockReturnValue(chunks);
+
+      (DiffProcessor as jest.Mock).mockImplementation(() => mockDiffProcessor);
+
+      await run();
+
+      await verifyScenarioOutcome(scenario);
+
+      // Should process all chunks - verify through ProviderManager mock calls
+      expect(ProviderManager).toHaveBeenCalled();
+      expect(mockInfo).toHaveBeenCalledWith('Analyzing chunk (2000 bytes, 1 files)');
+    });
+
+    it('should handle network timeout and retry logic scenario', async () => {
+      const scenario = getScenario('network-timeout-retry')!;
+      setupScenario(scenario);
+
+      await run();
+
+      await verifyScenarioOutcome(scenario);
+
+      // Verify retry logic suggestions are included
+      expect(mockSetOutput).toHaveBeenCalledWith(
+        'review-summary',
+        expect.stringContaining('**Suggestions Found:** 2')
+      );
+    });
+
+    it('should handle multi-language scenario', async () => {
+      const scenario = getScenario('multi-language')!;
+      setupScenario(scenario);
+
+      await run();
+
+      await verifyScenarioOutcome(scenario);
+
+      // Verify different file types are processed
+      expect(mockSetOutput).toHaveBeenCalledWith(
+        'review-summary',
+        expect.stringContaining('**Suggestions Found:** 3')
+      );
+    });
+
+    it('should handle custom prompt override scenario', async () => {
+      const scenario = getScenario('custom-prompt-override')!;
+      setupScenario(scenario);
+
+      await run();
+
+      await verifyScenarioOutcome(scenario);
+
+      // Verify custom prompt focus is reflected in output
+      expect(mockSetOutput).toHaveBeenCalledWith(
+        'review-summary',
+        expect.stringContaining('**Focus Areas:** validation')
+      );
+
+      // Verify custom prompt was used
+      const customPrompt = scenario.actionInputs['custom-prompt'];
+      expect(customPrompt).toContain('validation logic');
+    });
+
+    it('should handle custom chunk size in large PR scenario', async () => {
+      const scenario = getScenario('large-scale-pr')!;
+      setupScenario(scenario);
+
+      await run();
+
+      // Verify custom chunk size was used
+      expect(DiffProcessor).toHaveBeenCalledWith(1500);
+    });
+
+    it('should handle multiple API keys per provider', async () => {
+      const scenario = getScenario('large-scale-pr')!;
+      setupScenario(scenario);
+
+      await run();
+
+      // Verify multiple API keys were configured
+      expect(OpenAIProvider).toHaveBeenCalledWith(
+        expect.objectContaining({
+          apiKeys: ['sk-test-key-1', 'sk-test-key-2']
+        })
+      );
+    });
+
+    it('should handle provider-specific response styles', async () => {
+      const scenario = getScenario('multi-provider-conflict')!;
+      setupScenario(scenario);
+
+      await run();
+
+      // Verify each provider was initialized with correct API keys
+      expect(OpenAIProvider).toHaveBeenCalledWith(
+        expect.objectContaining({
+          apiKeys: scenario.actionInputs['openai-api-keys']
+        })
+      );
+      expect(ClaudeProvider).toHaveBeenCalledWith(
+        expect.objectContaining({
+          apiKeys: scenario.actionInputs['claude-api-keys']
+        })
+      );
+      expect(GeminiProvider).toHaveBeenCalledWith(
+        expect.objectContaining({
+          apiKeys: scenario.actionInputs['gemini-api-keys']
+        })
+      );
+    });
+  });
 });

@@ -491,6 +491,297 @@ File: src/utils.js
       shouldCreateReviewComment: true
     },
     mockScenario: 'basic-review'
+  },
+
+  // Multiple Providers Conflict Scenario
+  {
+    name: 'multi-provider-conflict',
+    description: 'PR where different providers give conflicting advice',
+    mockPRContext: {
+      owner: 'dev-team',
+      repo: 'api-service',
+      prNumber: 555,
+      title: 'Refactor: Update authentication service',
+      baseSha: 'conf111conf222',
+      headSha: 'conf222conf333',
+      files: ['src/auth/AuthService.ts', 'src/middleware/AuthMiddleware.ts']
+    },
+    diffContent: `File: src/auth/AuthService.ts
+@@ -30,7 +30,10 @@
+ export class AuthService {
+   async authenticateUser(token: string): Promise<User> {
+-    return this.validateToken(token);
++    // Added caching for performance
++    const cached = this.cache.get(token);
++    if (cached) return cached;
++    return this.validateToken(token);
+   }
+ }
+
+File: src/middleware/AuthMiddleware.ts
+@@ -15,7 +15,8 @@
+ export function AuthMiddleware(req: Request, res: Response, next: NextFunction) {
+   try {
+-    const user = await authService.authenticateUser(req.headers.authorization);
++    // Simplified token extraction
++    const user = await authService.authenticateUser(req.headers.authorization?.split(' ')[1]);
+     req.user = user;
+     next();
+   } catch (error) {`,
+    actionInputs: {
+      'github-token': 'test-token',
+      providers: 'openai,claude,gemini',
+      'review-focus': 'security,performance',
+      'openai-api-keys': ['sk-test-key-1'],
+      'claude-api-keys': ['sk-ant-test-key-1'],
+      'gemini-api-keys': ['AIza-test-key-1']
+    },
+    expectedOutcome: {
+      shouldSucceed: true,
+      expectedSuggestionsCount: 3, // Combined from all providers
+      expectedHighSeverityCount: 1,
+      expectedCommentsCreated: 2, // Summary + high severity comment
+      expectedOutputContains: ['🤖 AI Code Review Summary', '**Suggestions Found:** 3'],
+      shouldCreateReviewComment: true
+    },
+    mockScenario: 'multi-provider-conflict'
+  },
+
+  // Large-scale PR Scenario
+  {
+    name: 'large-scale-pr',
+    description: 'Very large PR with many files and chunks',
+    mockPRContext: {
+      owner: 'enterprise-team',
+      repo: 'monolith-app',
+      prNumber: 9999,
+      title: 'Major: Migrate legacy authentication system',
+      baseSha: 'large111large222',
+      headSha: 'large222large333',
+      files: [
+        'src/auth/AuthService.ts',
+        'src/auth/AuthController.ts',
+        'src/auth/AuthMiddleware.ts',
+        'src/auth/AuthRoutes.ts',
+        'src/auth/AuthTypes.ts',
+        'src/auth/AuthUtils.ts',
+        'src/auth/AuthValidators.ts',
+        'src/auth/AuthConfig.ts',
+        'src/auth/AuthTests.ts',
+        'src/database/UserRepository.ts',
+        'src/database/SessionRepository.ts',
+        'src/middleware/ErrorMiddleware.ts',
+        'src/utils/CryptoUtils.ts',
+        'src/utils/ValidationUtils.ts',
+        'src/config/DatabaseConfig.ts'
+      ]
+    },
+    diffContent: `Large PR with 5000+ lines of changes across multiple modules...
+File: src/auth/AuthService.ts (800 lines changed)
+File: src/auth/AuthController.ts (600 lines changed)
+File: src/auth/AuthMiddleware.ts (400 lines changed)
+File: src/auth/AuthRoutes.ts (300 lines changed)
+... and 11 more files with substantial changes`,
+    actionInputs: {
+      'github-token': 'test-token',
+      providers: 'openai,claude',
+      'review-focus': 'security,performance,style',
+      'chunk-size': '1500',
+      'openai-api-keys': ['sk-test-key-1', 'sk-test-key-2'],
+      'claude-api-keys': ['sk-ant-test-key-1']
+    },
+    expectedOutcome: {
+      shouldSucceed: true,
+      expectedSuggestionsCount: 25, // Multiple chunks with duplicate suggestions
+      expectedHighSeverityCount: 20, // High severity issues duplicated across chunks
+      expectedCommentsCreated: 6, // Summary + 5 high severity comments
+      expectedOutputContains: ['🤖 AI Code Review Summary', '**Suggestions Found:** 25'],
+      shouldCreateReviewComment: true
+    },
+    mockScenario: 'large-scale-review'
+  },
+
+  // Network Timeout/Retry Scenario
+  {
+    name: 'network-timeout-retry',
+    description: 'Testing retry logic and timeout handling',
+    mockPRContext: {
+      owner: 'resilience-team',
+      repo: 'fault-tolerant-app',
+      prNumber: 777,
+      title: 'Fix: Improve network resilience',
+      baseSha: 'retry111retry222',
+      headSha: 'retry222retry333',
+      files: ['src/network/HttpClient.ts', 'src/utils/RetryHandler.ts']
+    },
+    diffContent: `File: src/network/HttpClient.ts
+@@ -40,7 +40,12 @@
+ export class HttpClient {
+   async makeRequest(url: string, options: RequestOptions): Promise<Response> {
+-    return fetch(url, options);
++    // Added retry logic with exponential backoff
++    return this.retryHandler.execute(async () => {
++      const response = await fetch(url, options);
++      if (!response.ok) throw new Error(\`HTTP \${response.status}\`);
++      return response;
++    });
+   }
+ }
+
+File: src/utils/RetryHandler.ts
+@@ -10,7 +10,15 @@
+ export class RetryHandler {
+-  // Basic retry implementation needed
++  async execute<T>(operation: () => Promise<T>): Promise<T> {
++    for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
++      try {
++        return await operation();
++      } catch (error) {
++        if (attempt === this.maxRetries) throw error;
++        await this.delay(Math.pow(2, attempt) * 1000);
++      }
++    }
++  }
+ }`,
+    actionInputs: {
+      'github-token': 'test-token',
+      providers: 'openai',
+      'review-focus': 'reliability',
+      'openai-api-keys': ['sk-test-key-1']
+    },
+    expectedOutcome: {
+      shouldSucceed: true,
+      expectedSuggestionsCount: 2,
+      expectedHighSeverityCount: 1,
+      expectedCommentsCreated: 2,
+      expectedOutputContains: ['🤖 AI Code Review Summary', '**Suggestions Found:** 2'],
+      shouldCreateReviewComment: true
+    },
+    mockScenario: 'retry-logic-review'
+  },
+
+  // Multi-language Scenario
+  {
+    name: 'multi-language',
+    description: 'PR with files in different programming languages',
+    mockPRContext: {
+      owner: 'polyglot-team',
+      repo: 'multi-language-app',
+      prNumber: 444,
+      title: 'Feature: Add multi-language support',
+      baseSha: 'multi111multi222',
+      headSha: 'multi222multi333',
+      files: ['src/app.py', 'frontend/index.js', 'scripts/deploy.sh', 'config/docker-compose.yml']
+    },
+    diffContent: `File: src/app.py
+@@ -15,7 +15,10 @@
+ @app.route('/api/users')
+ def get_users():
+-    users = db.query("SELECT * FROM users")
++    # Added SQL injection protection
++    users = db.execute(
++        "SELECT * FROM users WHERE active = ?",
++        (True,)
++    )
+     return jsonify(users)
+
+File: frontend/index.js
+@@ -25,7 +25,10 @@
+ function fetchUsers() {
+-  fetch('/api/users').then(r => r.json()).then(displayUsers);
++  // Added error handling
++  fetch('/api/users')
++    .then(r => r.ok ? r.json() : Promise.reject(r.status))
++    .then(displayUsers)
++    .catch(handleError);
+
+File: scripts/deploy.sh
+@@ -5,7 +5,8 @@
+ echo "Deploying application..."
+-docker-compose up -d
++# Added health check
++docker-compose up -d && sleep 30 && ./scripts/health-check.sh
+
+File: config/docker-compose.yml
+@@ -10,7 +10,10 @@
+ services:
+   web:
+-    image: app:latest
++    image: app:latest
++    environment:
++      - NODE_ENV=production
++      - DATABASE_URL=\${DATABASE_URL}`,
+    actionInputs: {
+      'github-token': 'test-token',
+      providers: 'claude,gemini',
+      'review-focus': 'security,style',
+      'claude-api-keys': ['sk-ant-test-key-1'],
+      'gemini-api-keys': ['AIza-test-key-1']
+    },
+    expectedOutcome: {
+      shouldSucceed: true,
+      expectedSuggestionsCount: 3, // Actual number from mock response
+      expectedHighSeverityCount: 0, // No high severity issues
+      expectedCommentsCreated: 1, // Only summary comment
+      expectedOutputContains: ['🤖 AI Code Review Summary', '**Suggestions Found:** 3'],
+      shouldCreateReviewComment: true
+    },
+    mockScenario: 'multi-language-review'
+  },
+
+  // Custom Prompt Override Scenario
+  {
+    name: 'custom-prompt-override',
+    description: 'Testing custom prompt functionality',
+    mockPRContext: {
+      owner: 'custom-team',
+      repo: 'prompt-engineered-app',
+      prNumber: 333,
+      title: 'Feature: Add custom validation logic',
+      baseSha: 'custom111custom222',
+      headSha: 'custom222custom333',
+      files: ['src/validation/CustomValidator.ts', 'src/rules/BusinessRules.ts']
+    },
+    diffContent: `File: src/validation/CustomValidator.ts
+@@ -20,7 +20,12 @@
+ export class CustomValidator {
+   validateEmail(email: string): boolean {
+-    return email.includes('@');
++    // Enhanced email validation with regex
++    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
++    if (!emailRegex.test(email)) {
++      throw new ValidationError('Invalid email format');
++    }
++    return true;
+   }
+ }
+
+File: src/rules/BusinessRules.ts
+@@ -10,7 +10,10 @@
+ export class BusinessRules {
+   isAdult(age: number): boolean {
+-    return age >= 18;
++    // Business rule with configuration
++    const adultAge = this.config.get('legal.adultAge', 18);
++    return age >= adultAge;
++  }
+ }`,
+    actionInputs: {
+      'github-token': 'test-token',
+      providers: 'openai',
+      'review-focus': 'validation',
+      'custom-prompt': 'Please focus specifically on validation logic, input sanitization, and edge case handling. Pay special attention to regular expressions and business rule implementations.',
+      'openai-api-keys': ['sk-test-key-1']
+    },
+    expectedOutcome: {
+      shouldSucceed: true,
+      expectedSuggestionsCount: 3,
+      expectedHighSeverityCount: 0,
+      expectedCommentsCreated: 1,
+      expectedOutputContains: ['🤖 AI Code Review Summary', '**Focus Areas:** validation', '**Suggestions Found:** 3'],
+      shouldCreateReviewComment: true
+    },
+    mockScenario: 'custom-prompt-review'
   }
 ];
 
