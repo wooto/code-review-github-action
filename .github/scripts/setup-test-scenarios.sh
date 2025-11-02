@@ -73,8 +73,7 @@ if command -v jq &> /dev/null; then
         git checkout -b "$branch" 2>/dev/null || git checkout "$branch"
 
         # Apply changes from configuration
-        changes=$(jq -c ".scenarios[\"$scenario\"].changes[]?" "$CONFIG_ABS_PATH")
-        for change in $changes; do
+        jq -c ".scenarios[\"$scenario\"].changes[]?" "$CONFIG_ABS_PATH" | while IFS= read -r change; do
             file=$(echo "$change" | jq -r '.file')
             content=$(echo "$change" | jq -r '.content')
 
