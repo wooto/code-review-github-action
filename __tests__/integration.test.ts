@@ -286,7 +286,7 @@ describe('Integration Tests - Complete Workflow', () => {
       await run();
 
       expect(mockSetFailed).toHaveBeenCalledWith(
-        'No valid providers configured. Please provide at least one API key.'
+        'No valid providers configured. Please provide at least one API key for the specified providers.'
       );
     });
 
@@ -360,7 +360,20 @@ describe('Integration Tests - Complete Workflow', () => {
     it('should validate custom providers list', async () => {
       mockGetInput.mockImplementation((name) => {
         if (name === 'providers') return 'openai,claude';
-        return 'default-value';
+        if (name === 'github-token') return 'test-token';
+        if (name === 'review-focus') return 'security,performance,style';
+        if (name === 'chunk-size') return '2000';
+        if (name === 'custom-prompt') return '';
+        if (name === 'skip-patterns') return '*.min.js,package-lock.json';
+        return '';
+      });
+
+      // Ensure API keys are provided for the providers
+      mockGetMultilineInput.mockImplementation((name) => {
+        if (name === 'openai-api-keys') return ['sk-openai-1', 'sk-openai-2'];
+        if (name === 'claude-api-keys') return ['sk-ant-claude-1'];
+        if (name === 'gemini-api-keys') return []; // Empty for gemini since we don't expect it to be initialized
+        return [];
       });
 
       await run();

@@ -1,47 +1,28 @@
-name: 'AI Code Review'
-description: 'Multi-provider AI code review for pull requests with round-robin API key rotation'
-author: 'Your Name'
+name: 'Code Review GitHub Action'
+description: 'Automated code review for pull requests'
+author: 'Jesse'
 inputs:
-  github-token:
+  github_token:
     description: 'GitHub token for API access'
     required: true
-  openai-api-keys:
-    description: 'OpenAI API keys (array for round-robin)'
+  max_files:
+    description: 'Maximum number of files to review'
     required: false
-  claude-api-keys:
-    description: 'Anthropic Claude API keys (array for round-robin)'
+    default: '10'
+  file_extensions:
+    description: 'File extensions to review (comma-separated)'
     required: false
-  gemini-api-keys:
-    description: 'Google Gemini API keys (array for round-robin)'
-    required: false
-  providers:
-    description: 'Comma-separated list of providers to use'
-    required: false
-    default: 'openai,claude,gemini'
-  review-focus:
-    description: 'Comma-separated areas to focus on'
-    required: false
-    default: 'security,performance,style'
-  chunk-size:
-    description: 'Maximum chunk size for code analysis'
-    required: false
-    default: '2000'
-  custom-prompt:
-    description: 'Custom instructions for the AI'
-    required: false
-  skip-patterns:
-    description: 'File patterns to skip'
-    required: false
-    default: '*.min.js,package-lock.json'
-  fail-fast:
-    description: 'Stop on first provider failure (default: continue with other providers)'
-    required: false
-    default: 'false'
+    default: '.js,.ts,.jsx,.tsx,.py,.java,.go,.rs,.php'
 outputs:
-  review-summary:
+  review_summary:
     description: 'Summary of the code review'
-  providers-used:
-    description: 'List of providers used in this review'
+  files_reviewed:
+    description: 'Number of files reviewed'
+  issues_found:
+    description: 'Number of issues found'
 runs:
   using: 'node20'
   main: 'dist/index.js'
+branding:
+  icon: 'code'
+  color: 'blue'

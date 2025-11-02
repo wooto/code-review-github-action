@@ -1,5 +1,6 @@
 module.exports = {
-  extends: ['eslint:recommended'],
+  parser: "@typescript-eslint/parser",
+  extends: ["eslint:recommended"],
   env: {
     node: true,
     jest: true,
@@ -7,12 +8,28 @@ module.exports = {
   },
   parserOptions: {
     ecmaVersion: 2020,
-    sourceType: 'module',
+    sourceType: "module",
   },
   rules: {
-    'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-    'no-console': 'off',
-    'prefer-const': 'error',
+    "no-unused-vars": [
+      "error",
+      {
+        argsIgnorePattern: "^_",
+        varsIgnorePattern: "^_",
+        args: "after-used",
+      },
+    ],
+    "no-undef": "off", // TypeScript handles type checking
+    "no-console": "off",
+    "prefer-const": "error",
   },
-  ignorePatterns: ['.eslintrc.js', 'dist/', 'node_modules/', '**/*.js'],
+  overrides: [
+    {
+      files: ["**/IProvider.ts", "**/BaseProvider.ts"],
+      rules: {
+        "no-unused-vars": "off", // Allow unused params in abstract/interface methods
+      },
+    },
+  ],
+  ignorePatterns: [".eslintrc.js", "dist/", "node_modules/", "**/*.js"],
 };
