@@ -194,7 +194,7 @@ describe('GitHub Action Integration', () => {
     await run();
 
     expect(mockSetFailed).toHaveBeenCalledWith(
-      'No valid providers configured. Please provide at least one API key.'
+      'No valid providers configured. Please provide at least one API key for the specified providers.'
     );
   });
 

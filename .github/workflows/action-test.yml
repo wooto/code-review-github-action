@@ -247,7 +247,7 @@ jobs:
 
           echo "✅ Review verification completed"
 
-      
+
       - name: Test with act (containerized GitHub Actions)
         run: |
           echo "🐳 Testing with act (containerized GitHub Actions)..."
