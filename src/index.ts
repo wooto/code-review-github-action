@@ -8,6 +8,7 @@ import { ClaudeProvider } from "./providers/claude/ClaudeProvider";
 import { GeminiProvider } from "./providers/gemini/GeminiProvider";
 import { IProvider } from "./providers/IProvider";
 import { CommentFormatter } from "./comment/CommentFormatter";
+import { RateLimiter } from "./utils/RateLimiter";
 
 interface Suggestion {
   severity: 'high' | 'medium' | 'low';
@@ -316,6 +317,9 @@ async function run(): Promise<void> {
       // Initialize the comment formatter
       const commentFormatter = new CommentFormatter();
 
+      // Initialize rate limiter for API calls (200ms between API calls)
+      const rateLimiter = new RateLimiter(200);
+
       // Process all suggestions instead of just high-severity
       const commentableSuggestions = commentAllSeverities
         ? allSuggestions.filter(s => s.file && s.line && s.message)
@@ -335,6 +339,9 @@ async function run(): Promise<void> {
 
         for (const suggestion of limitedSuggestions) {
           try {
+            // Rate limiting
+            await rateLimiter.wait();
+
             const formattedComment = commentFormatter.formatComment({
               severity: suggestion.severity || 'medium',
               category: suggestion.category || 'general',
