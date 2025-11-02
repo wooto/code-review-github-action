@@ -4,7 +4,6 @@ on:
   push:
     branches: [ main, develop, feature/ci-coverage-fix, feature/ci-improvements-main ]
   pull_request:
-    branches: [ main ]
 
 jobs:
   test:
