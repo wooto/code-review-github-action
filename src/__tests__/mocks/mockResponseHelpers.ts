@@ -336,6 +336,202 @@ export const MOCK_RESPONSES: Record<string, MockReviewResponse> = {
       'Implement proper error handling for malformed inputs',
       'Add validation for configuration values and types'
     ]
+  },
+
+  // Timeout Error Review Scenario
+  'timeout-error-review': {
+    provider: 'claude',
+    summary: 'Analysis completed after timeout handling. Critical issues identified despite timeout challenges.',
+    issues: [
+      {
+        file: 'src/timeout/TimeoutHandler.ts',
+        line: 45,
+        severity: 'error',
+        message: 'Potential infinite loop in timeout handler',
+        suggestion: 'Add proper loop termination condition'
+      },
+      {
+        file: 'src/timeout/TimeoutHandler.ts',
+        line: 67,
+        severity: 'warning',
+        message: 'Timeout value too high for responsive user experience',
+        suggestion: 'Consider reducing timeout to 30 seconds or implementing progressive timeout'
+      }
+    ],
+    suggestions: [
+      'Implement circuit breaker pattern for repeated timeouts',
+      'Add retry logic with exponential backoff',
+      'Consider implementing timeout per provider rather than globally',
+      'Add monitoring for timeout occurrences'
+    ]
+  },
+
+  // Rate Limit Error Review Scenario
+  'rate-limit-error-review': {
+    provider: 'gemini',
+    summary: 'Rate limiting handled gracefully. Recommendations for optimizing API usage patterns.',
+    issues: [
+      {
+        file: 'src/ratelimit/RateLimiter.ts',
+        line: 23,
+        severity: 'warning',
+        message: 'No exponential backoff implemented for rate limits',
+        suggestion: 'Implement progressive delay increases'
+      },
+      {
+        file: 'src/ratelimit/RateLimiter.ts',
+        line: 34,
+        severity: 'info',
+        message: 'Good logging of rate limit events',
+        suggestion: 'Add metrics for rate limit analysis'
+      }
+    ],
+    suggestions: [
+      'Implement request queuing during rate limit periods',
+      'Add priority-based request processing',
+      'Consider implementing request batching to reduce API calls',
+      'Add rate limit prediction based on usage patterns'
+    ]
+  },
+
+  // Network Error Review Scenario
+  'network-error-review': {
+    provider: 'openai',
+    summary: 'Network resilience identified. Several improvements recommended for better error handling.',
+    issues: [
+      {
+        file: 'src/network/NetworkClient.ts',
+        line: 56,
+        severity: 'error',
+        message: 'No retry mechanism for network failures',
+        suggestion: 'Implement retry logic with exponential backoff'
+      },
+      {
+        file: 'src/network/NetworkClient.ts',
+        line: 78,
+        severity: 'warning',
+        message: 'Missing connection timeout configuration',
+        suggestion: 'Add reasonable timeout to prevent hanging requests'
+      },
+      {
+        file: 'src/network/NetworkClient.ts',
+        line: 89,
+        severity: 'info',
+        message: 'Basic error logging implemented',
+        suggestion: 'Add more detailed network error context'
+      }
+    ],
+    suggestions: [
+      'Implement circuit breaker pattern for network failures',
+      'Add network health checks before making requests',
+      'Consider implementing request caching for network failures',
+      'Add fallback mechanisms for critical network operations'
+    ]
+  },
+
+  // Malformed Data Review Scenario
+  'malformed-data-review': {
+    provider: 'claude',
+    summary: 'Data validation improvements needed. Several edge cases with malformed inputs identified.',
+    issues: [
+      {
+        file: 'src/validation/DataValidator.ts',
+        line: 12,
+        severity: 'error',
+        message: 'No input validation for API responses',
+        suggestion: 'Add schema validation for all external API responses'
+      },
+      {
+        file: 'src/validation/DataValidator.ts',
+        line: 34,
+        severity: 'warning',
+        message: 'Silent failure on invalid data',
+        suggestion: 'Add proper error handling for validation failures'
+      },
+      {
+        file: 'src/validation/DataValidator.ts',
+        line: 45,
+        severity: 'info',
+        message: 'Basic type checking implemented',
+        suggestion: 'Add comprehensive type guards and runtime validation'
+      }
+    ],
+    suggestions: [
+      'Implement comprehensive input validation for all API responses',
+      'Add data sanitization before processing',
+      'Create custom error types for validation failures',
+      'Add unit tests for malformed input scenarios'
+    ]
+  },
+
+  // Resource Exhaustion Review Scenario
+  'resource-exhaustion-review': {
+    provider: 'gemini',
+    summary: 'Resource management issues identified. Memory and processing optimizations needed.',
+    issues: [
+      {
+        file: 'src/memory/MemoryManager.ts',
+        line: 67,
+        severity: 'error',
+        message: 'Potential memory leak in large diff processing',
+        suggestion: 'Implement proper memory cleanup for large objects'
+      },
+      {
+        file: 'src/memory/MemoryManager.ts',
+        line: 89,
+        severity: 'warning',
+        message: 'No memory usage monitoring',
+        suggestion: 'Add memory usage tracking and alerts'
+      },
+      {
+        file: 'src/processing/Processor.ts',
+        line: 123,
+        severity: 'info',
+        message: 'Synchronous processing of large files',
+        suggestion: 'Consider streaming or chunked processing for large files'
+      }
+    ],
+    suggestions: [
+      'Implement memory usage monitoring and optimization',
+      'Add streaming processing for large files',
+      'Consider implementing memory pooling for frequently allocated objects',
+      'Add resource limits and graceful degradation'
+    ]
+  },
+
+  // Concurrent Request Review Scenario
+  'concurrent-request-review': {
+    provider: 'openai',
+    summary: 'Concurrency control improvements needed. Race conditions and request management issues identified.',
+    issues: [
+      {
+        file: 'src/concurrency/ConcurrencyManager.ts',
+        line: 23,
+        severity: 'error',
+        message: 'No request limiting implemented',
+        suggestion: 'Add semaphore or queue-based request limiting'
+      },
+      {
+        file: 'src/concurrency/ConcurrencyManager.ts',
+        line: 45,
+        severity: 'warning',
+        message: 'Potential race condition in request handling',
+        suggestion: 'Implement proper synchronization mechanisms'
+      },
+      {
+        file: 'src/concurrency/ConcurrencyManager.ts',
+        line: 67,
+        severity: 'info',
+        message: 'Basic async/await usage',
+        suggestion: 'Consider using Promise.allSettled for better error handling'
+      }
+    ],
+    suggestions: [
+      'Implement proper concurrency control with request limiting',
+      'Add request queuing and prioritization',
+      'Consider implementing request cancellation mechanisms',
+      'Add monitoring for concurrent request patterns'
+    ]
   }
 };
 

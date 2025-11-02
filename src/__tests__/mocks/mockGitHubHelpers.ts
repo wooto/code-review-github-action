@@ -5,6 +5,10 @@ export class MockGitHubClient extends GitHubClient {
   private mockDiffs: Map<string, string> = new Map();
   private shouldFail: boolean = false;
   private failureReason: string = 'GitHub API Error';
+  private failureType: 'error' | 'rate-limit' | 'timeout' | 'network' = 'error';
+  private failureCount: number = 1;
+  private currentFailureCount: number = 0;
+  private delayMs: number = 100;
   private createdComments: ReviewComment[] = [];
   private createdReviews: Array<{body: string, comments: ReviewComment[]}> = [];
 
@@ -28,10 +32,48 @@ export class MockGitHubClient extends GitHubClient {
     this.failureReason = reason;
   }
 
+  setFailureType(
+    shouldFail: boolean,
+    failureType: 'error' | 'rate-limit' | 'timeout' | 'network' = 'error',
+    reason: string = 'GitHub API Error',
+    failureCount: number = 1,
+    delayMs: number = 100
+  ): void {
+    this.shouldFail = shouldFail;
+    this.failureType = failureType;
+    this.failureReason = reason;
+    this.failureCount = failureCount;
+    this.delayMs = delayMs;
+    this.currentFailureCount = 0;
+  }
+
+  resetFailures(): void {
+    this.currentFailureCount = 0;
+  }
+
+  setDelay(delayMs: number): void {
+    this.delayMs = delayMs;
+  }
+
   // Override methods for mocking
   async getPRInfo(owner: string, repo: string, prNumber: number): Promise<PRInfo> {
-    if (this.shouldFail) {
-      throw new Error(`GitHub API Error: ${this.failureReason}`);
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, this.delayMs));
+
+    if (this.shouldFail && this.currentFailureCount < this.failureCount) {
+      this.currentFailureCount++;
+
+      switch (this.failureType) {
+        case 'timeout':
+          throw new Error(`GitHub API timeout: Request timed out after 30000ms`);
+        case 'rate-limit':
+          throw new Error(`GitHub API rate limit exceeded: Retry after ${Math.floor(Math.random() * 60) + 1} seconds`);
+        case 'network':
+          throw new Error(`GitHub Network error: Unable to reach api.github.com`);
+        case 'error':
+        default:
+          throw new Error(`GitHub API Error: ${this.failureReason}`);
+      }
     }
 
     const key = `${owner}/${repo}#${prNumber}`;
@@ -45,8 +87,23 @@ export class MockGitHubClient extends GitHubClient {
   }
 
   async getPRDiff(owner: string, repo: string, prNumber: number): Promise<string> {
-    if (this.shouldFail) {
-      throw new Error(`GitHub API Error: ${this.failureReason}`);
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, this.delayMs));
+
+    if (this.shouldFail && this.currentFailureCount < this.failureCount) {
+      this.currentFailureCount++;
+
+      switch (this.failureType) {
+        case 'timeout':
+          throw new Error(`GitHub API timeout: Request timed out after 30000ms`);
+        case 'rate-limit':
+          throw new Error(`GitHub API rate limit exceeded: Retry after ${Math.floor(Math.random() * 60) + 1} seconds`);
+        case 'network':
+          throw new Error(`GitHub Network error: Unable to reach api.github.com`);
+        case 'error':
+        default:
+          throw new Error(`GitHub API Error: ${this.failureReason}`);
+      }
     }
 
     const key = `${owner}/${repo}#${prNumber}`;
@@ -74,17 +131,29 @@ export class MockGitHubClient extends GitHubClient {
     body: string,
     comments?: ReviewComment[]
   ): Promise<void> {
-    if (this.shouldFail) {
-      throw new Error(`GitHub API Error: ${this.failureReason}`);
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, this.delayMs));
+
+    if (this.shouldFail && this.currentFailureCount < this.failureCount) {
+      this.currentFailureCount++;
+
+      switch (this.failureType) {
+        case 'timeout':
+          throw new Error(`GitHub API timeout: Request timed out after 30000ms`);
+        case 'rate-limit':
+          throw new Error(`GitHub API rate limit exceeded: Retry after ${Math.floor(Math.random() * 60) + 1} seconds`);
+        case 'network':
+          throw new Error(`GitHub Network error: Unable to reach api.github.com`);
+        case 'error':
+        default:
+          throw new Error(`GitHub API Error: ${this.failureReason}`);
+      }
     }
 
     this.createdReviews.push({
       body,
       comments: comments || []
     });
-
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 100));
   }
 
   async createReviewCommentThread(
@@ -93,14 +162,26 @@ export class MockGitHubClient extends GitHubClient {
     prNumber: number,
     comment: ReviewComment
   ): Promise<void> {
-    if (this.shouldFail) {
-      throw new Error(`GitHub API Error: ${this.failureReason}`);
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, this.delayMs));
+
+    if (this.shouldFail && this.currentFailureCount < this.failureCount) {
+      this.currentFailureCount++;
+
+      switch (this.failureType) {
+        case 'timeout':
+          throw new Error(`GitHub API timeout: Request timed out after 30000ms`);
+        case 'rate-limit':
+          throw new Error(`GitHub API rate limit exceeded: Retry after ${Math.floor(Math.random() * 60) + 1} seconds`);
+        case 'network':
+          throw new Error(`GitHub Network error: Unable to reach api.github.com`);
+        case 'error':
+        default:
+          throw new Error(`GitHub API Error: ${this.failureReason}`);
+      }
     }
 
     this.createdComments.push(comment);
-
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 100));
   }
 
   // Helper methods for testing
