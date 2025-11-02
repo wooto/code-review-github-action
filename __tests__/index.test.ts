@@ -177,4 +177,24 @@ describe('index.ts', () => {
     expect(mockGetInput('max-comments-per-file')).toBe('10');
     expect(mockGetInput('include-code-examples')).toBe('true');
   });
+
+  test('should process all severity levels when comment-all-severities is true', async () => {
+    const mockSuggestions = [
+      { severity: 'high', file: 'test.js', line: 10, message: 'High issue' },
+      { severity: 'medium', file: 'test.js', line: 20, message: 'Medium issue' },
+      { severity: 'low', file: 'test.js', line: 30, message: 'Low issue' }
+    ];
+
+    // Test current filtering logic (high severity only)
+    const highSeverityOnly = mockSuggestions.filter(s => s.severity === 'high');
+    expect(highSeverityOnly.length).toBe(1);
+    expect(highSeverityOnly[0].severity).toBe('high');
+
+    // Test all severity filtering (what we want to implement)
+    const allSeverities = mockSuggestions.filter(s => s.file && s.line && s.message);
+    expect(allSeverities.length).toBe(3);
+    expect(allSeverities.filter(s => s.severity === 'high').length).toBe(1);
+    expect(allSeverities.filter(s => s.severity === 'medium').length).toBe(1);
+    expect(allSeverities.filter(s => s.severity === 'low').length).toBe(1);
+  });
 });

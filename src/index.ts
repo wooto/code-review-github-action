@@ -7,6 +7,7 @@ import { OpenAIProvider } from "./providers/openai/OpenAIProvider";
 import { ClaudeProvider } from "./providers/claude/ClaudeProvider";
 import { GeminiProvider } from "./providers/gemini/GeminiProvider";
 import { IProvider } from "./providers/IProvider";
+import { CommentFormatter } from "./comment/CommentFormatter";
 
 interface Suggestion {
   severity: 'high' | 'medium' | 'low';
@@ -312,17 +313,46 @@ async function run(): Promise<void> {
     await githubClient.createReviewComment(owner, repo, prNumber, reviewComment);
 
     if (allSuggestions.length > 0) {
-      // Create individual comment threads for high-severity issues
-      const highSeveritySuggestions = allSuggestions.filter(s => s.severity === 'high');
-      for (const suggestion of highSeveritySuggestions) {
-        try {
-          await githubClient.createReviewCommentThread(owner, repo, prNumber, {
-            path: suggestion.file,
-            line: suggestion.line,
-            body: `**${suggestion.severity.toUpperCase()}**: ${suggestion.message}\n\n**Suggestion**: ${suggestion.suggestion}`
-          });
-        } catch (error) {
-          core.warning(`Failed to create review comment for ${suggestion.file}:${suggestion.line}: ${error}`);
+      // Initialize the comment formatter
+      const commentFormatter = new CommentFormatter();
+
+      // Process all suggestions instead of just high-severity
+      const commentableSuggestions = commentAllSeverities
+        ? allSuggestions.filter(s => s.file && s.line && s.message)
+        : allSuggestions.filter(s => s.severity === 'high' && s.file && s.line && s.message);
+
+      // Group by file to enforce max comments per file
+      const suggestionsByFile = commentableSuggestions.reduce((acc, suggestion) => {
+        const file = suggestion.file || 'Unknown';
+        if (!acc[file]) acc[file] = [];
+        acc[file].push(suggestion);
+        return acc;
+      }, {} as Record<string, any[]>);
+
+      // Process suggestions file by file with limits
+      for (const [file, fileSuggestions] of Object.entries(suggestionsByFile)) {
+        const limitedSuggestions = (fileSuggestions as any[]).slice(0, maxCommentsPerFile);
+
+        for (const suggestion of limitedSuggestions) {
+          try {
+            const formattedComment = commentFormatter.formatComment({
+              severity: suggestion.severity || 'medium',
+              category: suggestion.category || 'general',
+              message: suggestion.message,
+              suggestion: suggestion.suggestion || 'Consider refactoring this code',
+              codeExample: includeCodeExamples ? suggestion.codeExample : undefined,
+              file: suggestion.file,
+              line: suggestion.line
+            });
+
+            await githubClient.createReviewCommentThread(owner, repo, prNumber, {
+              path: suggestion.file,
+              line: suggestion.line,
+              body: formattedComment
+            });
+          } catch (error) {
+            core.warning(`Failed to create review comment for ${suggestion.file}:${suggestion.line}: ${error}`);
+          }
         }
       }
 
@@ -332,7 +362,8 @@ async function run(): Promise<void> {
       const reviewSummary = generateActionSummary(allSuggestions, prInfo, reviewFocusInput);
       core.setOutput('review-summary', reviewSummary);
       core.setOutput('suggestions-count', allSuggestions.length.toString());
-      core.setOutput('high-severity-count', highSeveritySuggestions.length.toString());
+      const highSeverityCount = allSuggestions.filter(s => s.severity === 'high').length;
+      core.setOutput('high-severity-count', highSeverityCount.toString());
     } else {
       core.info("No suggestions to create review for, but created summary comment");
 
