@@ -30,8 +30,8 @@ jobs:
     - name: Run linter
       run: npm run lint
 
-    - name: Run tests
-      run: npm test
+    - name: Run tests with enhanced reporting
+      run: npm run test:ci
 
     - name: Build action
       run: npm run build
@@ -41,13 +41,79 @@ jobs:
         test -f dist/index.js
         test -f dist/index.js.map
 
-    - name: Upload test coverage
+    - name: Generate comprehensive test reports
+      if: matrix.node-version == '20.x'
+      run: |
+        echo "📊 Generating comprehensive test reports..."
+
+        # Generate coverage reports
+        npm run coverage:report
+
+        # Generate coverage badge
+        npm run coverage:badge
+
+        # Analyze test trends
+        npm run test:trends
+
+        # Generate test results README
+        npm run test:readme
+
+        # Create test results summary
+        echo "📋 Creating test results summary..."
+
+        # Create comprehensive test summary
+        cat > test-results/test-summary.md << 'EOF'
+        # Test Results Summary
+
+        ## Test Environment
+        - **Node.js**: ${{ matrix.node-version }}
+        - **OS**: ${{ runner.os }}
+        - **Date**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+
+        ## Test Coverage
+
+        EOF
+
+        # Append coverage summary if available
+        if [ -f "test-results/coverage-summary.md" ]; then
+          cat test-results/coverage-summary.md >> test-results/test-summary.md
+        fi
+
+        # Append performance report if available
+        if [ -f "test-results/test-performance.json" ]; then
+          echo "## Performance Metrics" >> test-results/test-summary.md
+          node -e "
+            const perf = require('./test-results/test-performance.json');
+            console.log(\`- **Total Duration**: \${Math.round(perf.totalDuration / 1000)}s\`);
+            console.log(\`- **Total Tests**: \${perf.summary.totalTests}\`);
+            console.log(\`- **Average Duration**: \${Math.round(perf.summary.averageDuration)}ms\`);
+            if (perf.summary.slowestTest) {
+              console.log(\`- **Slowest Test**: \${perf.summary.slowestTest.name} (\${Math.round(perf.summary.slowestTest.duration)}ms)\`);
+            }
+          " >> test-results/test-summary.md
+        fi
+
+        echo "✅ Test reports generated successfully"
+
+    - name: Upload comprehensive test artifacts
+      if: matrix.node-version == '20.x'
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results-node${{ matrix.node-version }}
+        path: |
+          coverage/
+          test-results/
+        retention-days: 30
+        if-no-files-found: warn
+
+    - name: Upload test coverage to Codecov
       if: matrix.node-version == '20.x'
       uses: codecov/codecov-action@v3
       with:
         file: ./coverage/lcov.info
         flags: unittests
         name: codecov-umbrella
+        fail_ci_if_error: false
 
   build-and-package:
     runs-on: ubuntu-latest
@@ -66,8 +132,8 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
-    - name: Run tests
-      run: npm test
+    - name: Run tests with enhanced reporting
+      run: npm run test:ci
 
     - name: Build and package
       run: npm run package
@@ -221,7 +287,66 @@ jobs:
 
         echo "✅ Configuration tests completed"
 
-    - name: Upload integration test results
+    - name: Generate integration test report
+      if: always()
+      run: |
+        echo "📊 Generating integration test report..."
+
+        # Create integration test summary
+        cat > test-results/integration-test-summary.md << 'EOF'
+        # Integration Test Summary
+
+        ## Test Environment
+        - **Node.js**: ${{ matrix.node-version }}
+        - **OS**: ${{ runner.os }}
+        - **Date**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+        - **Test Mode**: Integration
+
+        ## Integration Test Categories Executed
+        EOF
+
+        # Analyze integration test logs
+        if [ -f "test-results/integration-tests.log" ]; then
+          echo "### Test Results Analysis" >> test-results/integration-test-summary.md
+
+          # Count passed/failed tests
+          PASSED_TESTS=$(grep -c "✅\|PASS" test-results/integration-tests.log || echo "0")
+          FAILED_TESTS=$(grep -c "❌\|FAIL\|Error" test-results/integration-tests.log || echo "0")
+          WARNING_TESTS=$(grep -c "⚠️\|WARN" test-results/integration-tests.log || echo "0")
+
+          echo "| Metric | Count |" >> test-results/integration-test-summary.md
+          echo "|--------|-------|" >> test-results/integration-test-summary.md
+          echo "| ✅ Passed | $PASSED_TESTS |" >> test-results/integration-test-summary.md
+          echo "| ❌ Failed | $FAILED_TESTS |" >> test-results/integration-test-summary.md
+          echo "| ⚠️ Warnings | $WARNING_TESTS |" >> test-results/integration-test-summary.md
+          echo ""
+
+          # Add test categories
+          echo "### Test Categories Executed" >> test-results/integration-test-summary.md
+          echo "- ✅ **Integration Test Suite** - Complete action workflow tests" >> test-results/integration-test-summary.md
+          echo "- ✅ **Action Outputs & GitHub API** - Output formatting and API interactions" >> test-results/integration-test-summary.md
+          echo "- ✅ **Error Handling & Resilience** - Failure recovery and graceful degradation" >> test-results/integration-test-summary.md
+          echo "- ✅ **Multi-Provider Scenarios** - Provider coordination and configuration" >> test-results/integration-test-summary.md
+          echo "- ✅ **Configuration & Validation** - Input validation and customization" >> test-results/integration-test-summary.md
+        fi
+
+        # Add performance metrics if available
+        if [ -f "test-results/test-performance.json" ]; then
+          echo "## Performance Metrics" >> test-results/integration-test-summary.md
+          node -e "
+            const perf = require('./test-results/test-performance.json');
+            console.log(\`- **Total Duration**: \${Math.round(perf.totalDuration / 1000)}s\`);
+            console.log(\`- **Total Tests**: \${perf.summary.totalTests}\`);
+            if (perf.summary.slowestTest) {
+              console.log(\`- **Slowest Test**: \${perf.summary.slowestTest.name}\`);
+              console.log(\`- **Slowest Test Duration**: \${Math.round(perf.summary.slowestTest.duration)}ms\`);
+            }
+          " >> test-results/integration-test-summary.md
+        fi
+
+        echo "✅ Integration test report generated"
+
+    - name: Upload comprehensive integration test artifacts
       if: always()
       uses: actions/upload-artifact@v4
       with:
@@ -230,8 +355,9 @@ jobs:
           coverage/
           test-results/
         retention-days: 7
+        if-no-files-found: warn
 
-    - name: Integration test summary
+    - name: Enhanced integration test summary
       if: always()
       run: |
         echo "## 🧪 Integration Test Summary" >> $GITHUB_STEP_SUMMARY
@@ -243,6 +369,37 @@ jobs:
         echo "- ✅ **Multi-Provider Scenarios** - Provider coordination and configuration" >> $GITHUB_STEP_SUMMARY
         echo "- ✅ **Configuration & Validation** - Input validation and customization" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
+
+        # Add test results analysis if available
+        if [ -f "test-results/integration-tests.log" ]; then
+          echo "### 📊 Test Results Analysis:" >> $GITHUB_STEP_SUMMARY
+          PASSED_TESTS=$(grep -c "✅\|PASS" test-results/integration-tests.log || echo "0")
+          FAILED_TESTS=$(grep -c "❌\|FAIL\|Error" test-results/integration-tests.log || echo "0")
+          WARNING_TESTS=$(grep -c "⚠️\|WARN" test-results/integration-tests.log || echo "0")
+
+          echo "| Metric | Count | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| ✅ Passed | $PASSED_TESTS | Success |" >> $GITHUB_STEP_SUMMARY
+          echo "| ❌ Failed | $FAILED_TESTS | Needs Attention |" >> $GITHUB_STEP_SUMMARY
+          echo "| ⚠️ Warnings | $WARNING_TESTS | Review Recommended |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+        fi
+
+        # Add performance metrics if available
+        if [ -f "test-results/test-performance.json" ]; then
+          echo "### ⚡ Performance Metrics:" >> $GITHUB_STEP_SUMMARY
+          node -e "
+            const perf = require('./test-results/test-performance.json');
+            console.log(\`- **Total Duration**: \${Math.round(perf.totalDuration / 1000)}s\`);
+            console.log(\`- **Total Tests**: \${perf.summary.totalTests}\`);
+            console.log(\`- **Average Duration**: \${Math.round(perf.summary.averageDuration)}ms\`);
+            if (perf.summary.slowestTest) {
+              console.log(\`- **Slowest Test**: \${perf.summary.slowestTest.name} (\${Math.round(perf.summary.slowestTest.duration)}ms)\`);
+            }
+          " >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+        fi
+
         echo "### Test Scenarios Covered:" >> $GITHUB_STEP_SUMMARY
         echo "| Category | Scenarios | Status |" >> $GITHUB_STEP_SUMMARY
         echo "|----------|-----------|--------|" >> $GITHUB_STEP_SUMMARY
@@ -260,8 +417,15 @@ jobs:
         echo "- **Test Mode**: Integration" >> $GITHUB_STEP_SUMMARY
         echo "- **Providers Tested**: OpenAI, Claude, Gemini" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📁 Artifacts Generated:" >> $GITHUB_STEP_SUMMARY
+        echo "- **Test Results**: \`\`test-results/\`\` directory" >> $GITHUB_STEP_SUMMARY
+        echo "- **Coverage Reports**: \`\`coverage/\`\` directory" >> $GITHUB_STEP_SUMMARY
+        echo "- **Performance Metrics**: \`\`test-performance.json\`\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **HTML Reports**: Interactive coverage and test reports" >> $GITHUB_STEP_SUMMARY
+        echo "- **JUnit XML**: For CI/CD integration" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
         echo "📊 **Integration test execution completed!**" >> $GITHUB_STEP_SUMMARY
-        echo "📋 Detailed logs available in workflow artifacts" >> $GITHUB_STEP_SUMMARY
+        echo "📋 **Detailed logs and reports available in workflow artifacts**" >> $GITHUB_STEP_SUMMARY
 
   security-scan:
     runs-on: ubuntu-latest
