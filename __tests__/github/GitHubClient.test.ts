@@ -1,4 +1,4 @@
-import { GitHubClient } from '../../src/github/GitHubClient';
+import { GitHubClient, ReviewComment } from '../../src/github/GitHubClient';
 import * as github from '@actions/github';
 
 jest.mock('@actions/github');
@@ -154,5 +154,21 @@ describe('GitHubClient', () => {
 
     await expect(client.getPRInfo('owner', 'repo', 123))
       .rejects.toThrow('Failed to get PR info for owner/repo#123: API Error');
+  });
+
+  test('ReviewComment should support extended fields', () => {
+    const comment: ReviewComment = {
+      path: 'test.js',
+      line: 10,
+      body: 'Test comment',
+      severity: 'high',
+      category: 'security',
+      suggestion: 'Fix this',
+      codeExample: 'const x = 1;'
+    };
+
+    expect(comment.path).toBe('test.js');
+    expect(comment.severity).toBe('high');
+    expect(comment.category).toBe('security');
   });
 });

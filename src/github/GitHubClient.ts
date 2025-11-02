@@ -12,6 +12,10 @@ export interface ReviewComment {
   path: string;
   line: number;
   body: string;
+  severity?: 'high' | 'medium' | 'low';
+  category?: string;
+  suggestion?: string;
+  codeExample?: string;
 }
 
 export class GitHubClient {
