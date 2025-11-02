@@ -9,17 +9,24 @@
     "lint": "eslint src/**/*.ts",
     "package": "ncc build src/index.ts -o dist"
   },
-  "keywords": ["github-action", "code-review", "ai", "openai", "claude", "gemini"],
+  "keywords": [
+    "github-action",
+    "code-review",
+    "ai",
+    "openai",
+    "claude",
+    "gemini"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
     "@actions/core": "^1.10.0",
     "@actions/github": "^5.1.1",
-    "@octokit/rest": "^20.0.1",
-    "openai": "^4.20.1",
-    "@anthropic-ai/sdk": "^0.9.1",
+    "@anthropic-ai/sdk": "^0.68.0",
     "@google-ai/generativelanguage": "^2.4.0",
-    "google-auth-library": "^9.4.0"
+    "@octokit/rest": "^20.0.1",
+    "google-auth-library": "^9.4.0",
+    "openai": "^4.20.1"
   },
   "devDependencies": {
     "@types/jest": "^29.5.5",

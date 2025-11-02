@@ -1,37 +1,48 @@
 import { ClaudeProvider } from '../../../src/providers/claude/ClaudeProvider';
 import Anthropic from '@anthropic-ai/sdk';
-const { Completions } = Anthropic;
 
 // Mock Anthropic module
 jest.mock('@anthropic-ai/sdk');
 const MockedAnthropic = Anthropic as jest.MockedClass<typeof Anthropic>;
-const MockedCompletions = Completions as jest.MockedClass<typeof Completions>;
+
+// Mock the messages API
+const mockMessagesCreate = jest.fn();
 
 describe('ClaudeProvider', () => {
+  let mockClient: any;
+
   beforeEach(() => {
     jest.clearAllMocks();
+
+    // Create a mock client with messages API
+    mockClient = {
+      messages: {
+        create: mockMessagesCreate
+      }
+    };
+
+    MockedAnthropic.mockImplementation(() => mockClient);
   });
 
   it('should analyze code and return review results', async () => {
-    const mockCreate = jest.fn().mockResolvedValue({
-      completion: JSON.stringify({
-        summary: 'Claude review complete',
-        suggestions: [{
-          file: 'app.py',
-          line: 25,
-          severity: 'high' as const,
-          message: 'Potential SQL injection vulnerability'
-        }]
-      })
+    mockMessagesCreate.mockResolvedValue({
+      content: [{
+        type: 'text',
+        text: JSON.stringify({
+          summary: 'Claude review complete',
+          suggestions: [{
+            file: 'app.py',
+            line: 25,
+            severity: 'high' as const,
+            message: 'Potential SQL injection vulnerability'
+          }]
+        })
+      }]
     });
 
-    MockedCompletions.mockImplementation(() => ({
-      create: mockCreate
-    } as any));
-
-    MockedAnthropic.mockImplementation(() => ({} as any));
-
-    const provider = new ClaudeProvider('test-api-key');
+    const provider = new ClaudeProvider({
+      apiKeys: ['test-api-key']
+    });
 
     const result = await provider.analyzeCode('test diff', {
       prNumber: 456,
@@ -43,18 +54,22 @@ describe('ClaudeProvider', () => {
     expect(result.summary).toBe('Claude review complete');
     expect(result.suggestions).toHaveLength(1);
     expect(result.suggestions[0].severity).toBe('high');
+    expect(mockMessagesCreate).toHaveBeenCalledWith({
+      model: 'claude-3-sonnet-20240229',
+      max_tokens: 1000,
+      messages: [{
+        role: 'user',
+        content: expect.stringContaining('test diff')
+      }]
+    });
   });
 
   it('should handle API errors gracefully', async () => {
-    const mockCreate = jest.fn().mockRejectedValue(new Error('API rate limit exceeded'));
+    mockMessagesCreate.mockRejectedValue(new Error('API rate limit exceeded'));
 
-    MockedCompletions.mockImplementation(() => ({
-      create: mockCreate
-    } as any));
-
-    MockedAnthropic.mockImplementation(() => ({} as any));
-
-    const provider = new ClaudeProvider('test-api-key');
+    const provider = new ClaudeProvider({
+      apiKeys: ['test-api-key']
+    });
 
     await expect(provider.analyzeCode('test diff', {
       prNumber: 456,
@@ -65,17 +80,16 @@ describe('ClaudeProvider', () => {
   });
 
   it('should handle non-JSON responses gracefully', async () => {
-    const mockCreate = jest.fn().mockResolvedValue({
-      completion: 'This is a plain text response without JSON'
+    mockMessagesCreate.mockResolvedValue({
+      content: [{
+        type: 'text',
+        text: 'This is a plain text response without JSON'
+      }]
     });
 
-    MockedCompletions.mockImplementation(() => ({
-      create: mockCreate
-    } as any));
-
-    MockedAnthropic.mockImplementation(() => ({} as any));
-
-    const provider = new ClaudeProvider('test-api-key');
+    const provider = new ClaudeProvider({
+      apiKeys: ['test-api-key']
+    });
 
     const result = await provider.analyzeCode('test diff', {
       prNumber: 456,
@@ -90,8 +104,10 @@ describe('ClaudeProvider', () => {
   });
 
   it('should extract JSON from mixed responses', async () => {
-    const mockCreate = jest.fn().mockResolvedValue({
-      completion: `Here's my analysis:
+    mockMessagesCreate.mockResolvedValue({
+      content: [{
+        type: 'text',
+        text: `Here's my analysis:
 
 {
   "summary": "Code looks good overall",
@@ -106,15 +122,12 @@ describe('ClaudeProvider', () => {
 }
 
 The code follows best practices.`
+      }]
     });
 
-    MockedCompletions.mockImplementation(() => ({
-      create: mockCreate
-    } as any));
-
-    MockedAnthropic.mockImplementation(() => ({} as any));
-
-    const provider = new ClaudeProvider('test-api-key');
+    const provider = new ClaudeProvider({
+      apiKeys: ['test-api-key']
+    });
 
     const result = await provider.analyzeCode('test diff', {
       prNumber: 456,
@@ -128,8 +141,97 @@ The code follows best practices.`
     expect(result.suggestions[0].message).toBe('Consider adding error handling');
   });
 
-  it('should throw error when no API key provided', () => {
-    expect(() => new ClaudeProvider('')).toThrow('Claude API key is required');
-    expect(() => new ClaudeProvider('   ')).toThrow('Claude API key is required');
+  it('should throw error when no API keys provided', () => {
+    expect(() => new ClaudeProvider({
+      apiKeys: []
+    })).toThrow('At least one API key is required');
+  });
+
+  it('should perform health check successfully', async () => {
+    mockMessagesCreate.mockResolvedValue({
+      content: [{
+        type: 'text',
+        text: 'Hi'
+      }]
+    });
+
+    const provider = new ClaudeProvider({
+      apiKeys: ['test-api-key']
+    });
+
+    const healthStatus = await provider.healthCheck();
+    expect(healthStatus).toBe(true);
+  });
+
+  it('should handle health check failure', async () => {
+    mockMessagesCreate.mockRejectedValue(new Error('API error'));
+
+    const provider = new ClaudeProvider({
+      apiKeys: ['test-api-key']
+    });
+
+    const healthStatus = await provider.healthCheck();
+    expect(healthStatus).toBe(false);
+  });
+
+  it('should initialize successfully', async () => {
+    mockMessagesCreate.mockResolvedValue({
+      content: [{
+        type: 'text',
+        text: 'Hi'
+      }]
+    });
+
+    const provider = new ClaudeProvider({
+      apiKeys: ['test-api-key']
+    });
+
+    await expect(provider.initialize()).resolves.not.toThrow();
+  });
+
+  it('should return model info', () => {
+    const provider = new ClaudeProvider({
+      apiKeys: ['test-api-key'],
+      model: 'claude-3-opus-20240229',
+      maxTokens: 2000
+    });
+
+    const modelInfo = provider.getModelInfo();
+    expect(modelInfo.model).toBe('claude-3-opus-20240229');
+    expect(modelInfo.maxTokens).toBe(2000);
+  });
+
+  it('should use default model and tokens when not specified', () => {
+    const provider = new ClaudeProvider({
+      apiKeys: ['test-api-key']
+    });
+
+    const modelInfo = provider.getModelInfo();
+    expect(modelInfo.model).toBe('claude-3-sonnet-20240229');
+    expect(modelInfo.maxTokens).toBe(1000);
+  });
+
+  it('should rotate API keys', async () => {
+    mockMessagesCreate.mockResolvedValue({
+      content: [{
+        type: 'text',
+        text: 'test response'
+      }]
+    });
+
+    const provider = new ClaudeProvider({
+      apiKeys: ['key1', 'key2']
+    });
+
+    expect(provider.getCurrentApiKey()).toBe('key1');
+
+    await provider.analyzeCode('test diff', {
+      prNumber: 456,
+      repository: 'test/repo',
+      branch: 'develop',
+      files: ['app.py']
+    });
+
+    expect(provider.getCurrentApiKey()).toBe('key2');
   });
 });
