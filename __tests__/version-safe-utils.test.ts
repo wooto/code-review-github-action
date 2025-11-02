@@ -19,6 +19,19 @@ describe('VersionSafeUtils', () => {
       expect(typeof timestamp).toBe('number');
       expect(timestamp).toBeGreaterThan(0);
     });
+
+    it('should fallback to Date.now when performance.now is not available', () => {
+      // Mock performance.now to be undefined
+      const originalPerformance = (global as any).performance;
+      delete (global as any).performance;
+
+      const timestamp = utils.now();
+      expect(typeof timestamp).toBe('number');
+      expect(timestamp).toBeGreaterThan(0);
+
+      // Restore performance
+      (global as any).performance = originalPerformance;
+    });
   });
 
   describe('generateArray', () => {
@@ -36,6 +49,19 @@ describe('VersionSafeUtils', () => {
     it('should handle empty array', () => {
       const result = utils.generateArray(0, 'test');
       expect(result).toEqual([]);
+    });
+
+    it('should fallback to manual array generation when Array.from is not available', () => {
+      // Mock Array.from to be undefined
+      const originalArrayFrom = Array.from;
+      delete (Array as any).from;
+
+      const result = utils.generateArray(3, 'test');
+      expect(result).toEqual(['test', 'test', 'test']);
+      expect(result.length).toBe(3);
+
+      // Restore Array.from
+      (Array as any).from = originalArrayFrom;
     });
   });
 
@@ -55,6 +81,21 @@ describe('VersionSafeUtils', () => {
       const result2 = utils.stringIncludes('test', '');
       expect(result1).toBe(false);
       expect(result2).toBe(true);
+    });
+
+    it('should fallback to indexOf when text.includes is not available', () => {
+      // Mock text.includes to be undefined
+      const originalIncludes = String.prototype.includes;
+      delete (String.prototype as any).includes;
+
+      const result = utils.stringIncludes('hello world', 'world');
+      expect(result).toBe(true);
+
+      const result2 = utils.stringIncludes('hello world', 'mars');
+      expect(result2).toBe(false);
+
+      // Restore includes
+      (String.prototype as any).includes = originalIncludes;
     });
   });
 
@@ -177,6 +218,25 @@ describe('VersionSafeUtils', () => {
       expect(typeof usage.heapUsed).toBe('number');
       expect(typeof usage.external).toBe('number');
     });
+
+    it('should return fallback values when process.memoryUsage is not available', () => {
+      // Mock process.memoryUsage to be undefined
+      const originalMemoryUsage = (process as any).memoryUsage;
+      delete (process as any).memoryUsage;
+
+      const usage = utils.getMemoryUsage();
+      expect(usage).toHaveProperty('rss');
+      expect(usage).toHaveProperty('heapTotal');
+      expect(usage).toHaveProperty('heapUsed');
+      expect(usage).toHaveProperty('external');
+      expect(usage.rss).toBe(0);
+      expect(usage.heapTotal).toBe(0);
+      expect(usage.heapUsed).toBe(0);
+      expect(usage.external).toBe(0);
+
+      // Restore process.memoryUsage
+      (process as any).memoryUsage = originalMemoryUsage;
+    });
   });
 
   describe('getVersionInfo', () => {
@@ -266,6 +326,19 @@ describe('VersionSafeUtils', () => {
     it('should handle different cases', () => {
       const result = utils.localeCompare('Apple', 'apple');
       expect([result, -result]).toContain(1); // Should be -1 or 1
+    });
+
+    it('should fallback to manual comparison when localeCompare is not available', () => {
+      // Mock String.prototype.localeCompare to be undefined
+      const originalLocaleCompare = String.prototype.localeCompare;
+      delete (String.prototype as any).localeCompare;
+
+      expect(utils.localeCompare('a', 'b')).toBeLessThan(0);
+      expect(utils.localeCompare('b', 'a')).toBeGreaterThan(0);
+      expect(utils.localeCompare('a', 'a')).toBe(0);
+
+      // Restore localeCompare
+      (String.prototype as any).localeCompare = originalLocaleCompare;
     });
   });
 });

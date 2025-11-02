@@ -2,7 +2,7 @@
   "name": "code-review-github-action",
   "version": "1.0.0",
   "description": "GitHub Action for automated code review",
-  "main": "src/index.js",
+  "main": "dist/index.js",
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
@@ -16,6 +16,8 @@
     "lint:fix": "eslint src/ --ext .js,.ts --fix",
     "type-check": "tsc --noEmit",
     "build": "tsc",
+    "build:action": "ncc build src/index.ts -o dist --source-map",
+    "build:all": "npm run build && npm run build:action",
     "start": "node src/index.js"
   },
   "dependencies": {
@@ -24,17 +26,19 @@
     "lodash": "^4.17.21"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.5",
+    "@eslint/js": "^9.39.0",
+    "@types/jest": "^30.0.0",
     "@types/lodash": "^4.14.197",
-    "@types/node": "^20.6.0",
-    "@typescript-eslint/eslint-plugin": "^6.7.0",
-    "@typescript-eslint/parser": "^6.7.0",
-    "eslint": "^8.49.0",
-    "eslint-config-prettier": "^9.0.0",
+    "@types/node": "^24.9.2",
+    "@typescript-eslint/eslint-plugin": "^8.46.2",
+    "@typescript-eslint/parser": "^8.46.2",
+    "@vercel/ncc": "^0.38.1",
+    "eslint": "^9.39.0",
+    "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.0.0",
-    "jest": "^29.7.0",
+    "jest": "^30.2.0",
     "prettier": "^3.0.3",
-    "ts-jest": "^29.1.1",
+    "ts-jest": "^29.4.5",
     "typescript": "^5.2.2"
   },
   "jest": {
@@ -65,7 +69,7 @@
     ]
   },
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=20.0.0"
   },
   "repository": {
     "type": "git",

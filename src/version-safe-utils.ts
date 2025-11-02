@@ -8,15 +8,15 @@ export class VersionSafeUtils {
 
   constructor() {
     this.nodeVersion = process.version;
-    this.isVersion20 = this.nodeVersion.startsWith('v20.');
-    this.isVersion22 = this.nodeVersion.startsWith('v22.');
+    this.isVersion20 = this.nodeVersion.startsWith("v20.");
+    this.isVersion22 = this.nodeVersion.startsWith("v22.");
   }
 
   /**
    * Get current timestamp with high resolution when available
    */
   now(): number {
-    if (typeof performance !== 'undefined' && performance.now) {
+    if (typeof performance !== "undefined" && performance.now) {
       return performance.now();
     }
     return Date.now();
@@ -53,7 +53,7 @@ export class VersionSafeUtils {
   async withTimeout<T>(
     promise: Promise<T>,
     timeoutMs: number,
-    timeoutMessage: string = 'Operation timed out'
+    timeoutMessage: string = "Operation timed out",
   ): Promise<T> {
     const timeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs);
@@ -71,10 +71,10 @@ export class VersionSafeUtils {
     for (const key in source) {
       if (source[key] !== undefined) {
         if (
-          typeof source[key] === 'object' &&
+          typeof source[key] === "object" &&
           source[key] !== null &&
           !Array.isArray(source[key]) &&
-          typeof result[key] === 'object' &&
+          typeof result[key] === "object" &&
           result[key] !== null &&
           !Array.isArray(result[key])
         ) {
@@ -92,8 +92,9 @@ export class VersionSafeUtils {
    * Generate random string with consistent behavior
    */
   randomString(length: number = 10): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = '';
+    const chars =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let result = "";
 
     for (let i = 0; i < length; i++) {
       const randomIndex = Math.floor(Math.random() * chars.length);
@@ -108,9 +109,9 @@ export class VersionSafeUtils {
    */
   isNodeError(error: unknown): error is NodeJS.ErrnoException {
     return (
-      typeof error === 'object' &&
+      typeof error === "object" &&
       error !== null &&
-      ('code' in error || 'errno' in error)
+      ("code" in error || "errno" in error)
     );
   }
 
@@ -118,7 +119,7 @@ export class VersionSafeUtils {
    * Create delay that works consistently
    */
   async delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
@@ -138,7 +139,7 @@ export class VersionSafeUtils {
         heapTotal: usage.heapTotal,
         heapUsed: usage.heapUsed,
         external: usage.external,
-        arrayBuffers: usage.arrayBuffers
+        arrayBuffers: usage.arrayBuffers,
       };
     }
 
@@ -147,7 +148,7 @@ export class VersionSafeUtils {
       rss: 0,
       heapTotal: 0,
       heapUsed: 0,
-      external: 0
+      external: 0,
     };
   }
 
@@ -165,16 +166,16 @@ export class VersionSafeUtils {
     const major = versionMatch ? parseInt(versionMatch[1], 10) : 0;
 
     const features: string[] = [];
-    if (major >= 18) features.push('fetch-api');
-    if (major >= 20) features.push('test-runner');
-    if (major >= 22) features.push('esm-stability');
+    if (major >= 18) features.push("fetch-api");
+    if (major >= 20) features.push("test-runner");
+    if (major >= 22) features.push("esm-stability");
 
     return {
       version: this.nodeVersion,
       major,
       isVersion20: this.isVersion20,
       isVersion22: this.isVersion22,
-      features
+      features,
     };
   }
 
@@ -184,7 +185,7 @@ export class VersionSafeUtils {
   async processInChunks<T, R>(
     items: T[],
     chunkSize: number,
-    processor: (chunk: T[]) => Promise<R[]>
+    processor: (chunk: T[]) => Promise<R[]>,
   ): Promise<R[]> {
     const results: R[] = [];
 
@@ -204,13 +205,13 @@ export class VersionSafeUtils {
    * Validate and sanitize input with version-safe approach
    */
   sanitizeInput(input: string): string {
-    if (typeof input !== 'string') {
-      return '';
+    if (typeof input !== "string") {
+      return "";
     }
 
     // Remove potentially harmful characters
     return input
-      .replace(/[\x00-\x1F\x7F]/g, '') // Remove control characters
+      .replace(/[\x00-\x1F\x7F]/g, "") // Remove control characters
       .trim()
       .substring(0, 1000); // Limit length
   }

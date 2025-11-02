@@ -1,8 +1,8 @@
-import { VersionSafeUtils } from './version-safe-utils';
+import { VersionSafeUtils } from "./version-safe-utils";
 
 export interface Issue {
   line: number;
-  severity: 'error' | 'warning' | 'info';
+  severity: "error" | "warning" | "info";
   message: string;
   rule?: string;
 }
@@ -27,7 +27,7 @@ export class DiffProcessor {
     const startTime = this.versionSafeUtils.now();
 
     const issues: Issue[] = [];
-    const lines = patch.split('\n');
+    const lines = patch.split("\n");
 
     let linesAdded = 0;
     let linesRemoved = 0;
@@ -36,14 +36,14 @@ export class DiffProcessor {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
 
-      if (line.startsWith('+') && !line.startsWith('+++')) {
+      if (line.startsWith("+") && !line.startsWith("+++")) {
         linesAdded++;
         complexity = this.analyzeComplexity(line, complexity);
 
         // Analyze for potential issues
         const lineIssues = this.analyzeLine(line.substring(1), i);
         issues.push(...lineIssues);
-      } else if (line.startsWith('-') && !line.startsWith('---')) {
+      } else if (line.startsWith("-") && !line.startsWith("---")) {
         linesRemoved++;
       }
     }
@@ -60,17 +60,17 @@ export class DiffProcessor {
       metrics: {
         linesAdded,
         linesRemoved,
-        complexity
-      }
+        complexity,
+      },
     };
   }
 
   private analyzeComplexity(line: string, currentComplexity: number): number {
     // Simple complexity analysis
-    if (line.includes('if') || line.includes('for') || line.includes('while')) {
+    if (line.includes("if") || line.includes("for") || line.includes("while")) {
       return currentComplexity + 1;
     }
-    if (line.includes('&&') || line.includes('||')) {
+    if (line.includes("&&") || line.includes("||")) {
       return currentComplexity + 1;
     }
     return currentComplexity;
@@ -80,37 +80,37 @@ export class DiffProcessor {
     const issues: Issue[] = [];
 
     // Check for common issues
-    if (line.includes('console.log')) {
+    if (line.includes("console.log")) {
       issues.push({
         line: lineNumber,
-        severity: 'warning',
-        message: 'console.log statement found',
-        rule: 'no-console'
+        severity: "warning",
+        message: "console.log statement found",
+        rule: "no-console",
       });
     }
 
-    if (line.includes('TODO:') || line.includes('FIXME:')) {
+    if (line.includes("TODO:") || line.includes("FIXME:")) {
       issues.push({
         line: lineNumber,
-        severity: 'info',
-        message: 'TODO or FIXME comment found',
-        rule: 'todo-comments'
+        severity: "info",
+        message: "TODO or FIXME comment found",
+        rule: "todo-comments",
       });
     }
 
     if (line.length > 120) {
       issues.push({
         line: lineNumber,
-        severity: 'warning',
-        message: 'Line exceeds 120 characters',
-        rule: 'max-line-length'
+        severity: "warning",
+        message: "Line exceeds 120 characters",
+        rule: "max-line-length",
       });
     }
 
     return issues;
   }
 
-  private analyzeFile(filename: string): Issue[] {
+  private analyzeFile(_filename: string): Issue[] {
     // File-specific checks can be added here
     return [];
   }

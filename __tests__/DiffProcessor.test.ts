@@ -63,4 +63,28 @@ index 123456..789abc 100644
 
     expect(result.metrics.complexity).toBeGreaterThan(0);
   });
+
+  test('should handle removed lines', () => {
+    const diffWithRemovedLines = `diff --git a/test.js b/test.js
+index 123456..789abc 100644
+--- a/test.js
++++ b/test.js
+@@ -1,3 +1,2 @@
+ const x = 1;
+-const y = 2;
+ console.log(x);`;
+
+    const result = processor.processDiff(diffWithRemovedLines, 'test.js');
+
+    expect(result.metrics.linesRemoved).toBe(1);
+    expect(result.metrics.linesAdded).toBe(0);
+  });
+
+  test('should handle logical operators in complexity analysis', () => {
+    const diffWithLogicalOperators = `+if (a && b) { doSomething(); }`;
+
+    const result = processor.processDiff(diffWithLogicalOperators, 'test.js');
+
+    expect(result.metrics.complexity).toBeGreaterThan(0);
+  });
 });

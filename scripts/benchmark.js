@@ -1,5 +1,6 @@
 const { performance } = require('perf_hooks');
 const { DiffProcessor } = require('../dist/DiffProcessor');
+const { VersionSafeUtils } = require('../dist/version-safe-utils');
 
 class Benchmark {
   constructor() {
@@ -82,7 +83,6 @@ class Benchmark {
     }, 200);
 
     // Benchmark 4: VersionSafeUtils operations
-    const { VersionSafeUtils } = require('../dist/version-safe-utils');
     const utils = new VersionSafeUtils();
 
     await this.runBenchmark('VersionSafeUtils Array Generation', async () => {

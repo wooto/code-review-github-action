@@ -1,0 +1,28 @@
+name: 'Code Review GitHub Action'
+description: 'Automated code review for pull requests'
+author: 'Jesse'
+inputs:
+  github_token:
+    description: 'GitHub token for API access'
+    required: true
+  max_files:
+    description: 'Maximum number of files to review'
+    required: false
+    default: '10'
+  file_extensions:
+    description: 'File extensions to review (comma-separated)'
+    required: false
+    default: '.js,.ts,.jsx,.tsx,.py,.java,.go,.rs,.php'
+outputs:
+  review_summary:
+    description: 'Summary of the code review'
+  files_reviewed:
+    description: 'Number of files reviewed'
+  issues_found:
+    description: 'Number of issues found'
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
+branding:
+  icon: 'code'
+  color: 'blue'
