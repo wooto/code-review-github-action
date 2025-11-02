@@ -148,7 +148,7 @@ jobs:
 
           # Get the latest release information
           if [ "$ACT_VERSION" = "latest" ]; then
-            ACT_VERSION=$(curl -s https://api.github.com/repos/nektos/act/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1')
+            ACT_VERSION=$(curl -s https://api.github.com/repos/nektos/act/releases/latest | jq -r '.tag_name')
           fi
 
           # Determine architecture
