@@ -41,7 +41,7 @@ export class GitHubClient {
         title: data.title,
         baseSha: data.base.sha,
         headSha: data.head.sha,
-        files: files.map(file => file.filename)
+        files: files.map((file: any) => file.filename)
       };
     } catch (error) {
       throw new Error(`Failed to get PR info for ${owner}/${repo}#${prNumber}: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -60,8 +60,8 @@ export class GitHubClient {
       });
 
       const diffs = data.files
-        ?.filter(file => file.patch)
-        .map(file => `File: ${file.filename}\n${file.patch}`)
+        ?.filter((file: any) => file.patch)
+        .map((file: any) => `File: ${file.filename}\n${file.patch}`)
         .join('\n\n') || '';
 
       return diffs;
