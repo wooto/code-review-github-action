@@ -16,9 +16,13 @@ export abstract class BaseProvider implements IProvider {
   abstract analyzeCode(diff: string, context: ReviewContext): Promise<ReviewResult>;
 
   protected getCurrentApiKey(): string {
-    const key = this.apiKeys[this.currentKeyIndex];
-    this.currentKeyIndex = (this.currentKeyIndex + 1) % this.apiKeys.length;
-    return key;
+    return this.apiKeys[this.currentKeyIndex];
+  }
+
+  protected advanceToNextApiKey(): void {
+    if (this.hasMultipleKeys()) {
+      this.currentKeyIndex = (this.currentKeyIndex + 1) % this.apiKeys.length;
+    }
   }
 
   protected getAvailableKeys(): string[] {

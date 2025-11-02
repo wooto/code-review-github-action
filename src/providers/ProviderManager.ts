@@ -1,4 +1,5 @@
 import { IProvider, ReviewContext, ReviewResult } from './IProvider';
+import * as core from '@actions/core';
 
 export interface ProviderStats {
   providerName: string;
@@ -50,13 +51,13 @@ export class ProviderManager {
         const result = await provider.analyzeCode(diff, context);
         stats.successCount++;
 
-        console.info(`✅ ${provider.name} completed successfully`);
+        core.info(`✅ ${provider.name} completed successfully`);
         return result;
       } catch (error) {
         lastError = error as Error;
         stats.failureCount++;
 
-        console.warn(`❌ Provider ${provider.name} failed:`, error);
+        core.warning(`❌ Provider ${provider.name} failed: ${error}`);
 
         if (this.failFast) {
           throw new Error(`Provider ${provider.name} failed: ${error}`);
