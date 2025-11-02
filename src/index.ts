@@ -17,6 +17,10 @@ async function run(): Promise<void> {
     const providersInput = core.getInput("providers", { required: true });
     console.log("🔍 DEBUG: Got providers:", providersInput);
     const chunkSizeInput = core.getInput("chunk-size", { required: false }) || "2000";
+    const reviewFocusInput = core.getInput("review-focus", { required: false }) || "security,performance,style";
+    console.log("🔍 DEBUG: Got review focus:", reviewFocusInput);
+    const skipPatternsInput = core.getInput("skip-patterns", { required: false }) || "";
+    console.log("🔍 DEBUG: Got skip patterns:", skipPatternsInput);
 
     const chunkSize = parseInt(chunkSizeInput, 10);
     console.log("🔍 DEBUG: Parsed chunk size:", chunkSize);
@@ -180,6 +184,9 @@ async function run(): Promise<void> {
     const { owner, repo } = context.repo;
     const prNumber = context.payload.pull_request.number;
 
+    core.info(`Processing PR #${prNumber} in ${owner}/${repo}`);
+    core.info(`Using providers: ${providersInput}`);
+
     const prInfo = await githubClient.getPRInfo(owner, repo, prNumber);
     core.info(`Analyzing PR #${prInfo.title} with ${prInfo.files.length} files`);
 
@@ -193,6 +200,28 @@ async function run(): Promise<void> {
 
     // Process diff into chunks
     const chunks = diffProcessor.chunkDiff(diff);
+
+    // Apply skip patterns if provided
+    const skipPatterns = skipPatternsInput ? skipPatternsInput.split(',').map(p => p.trim()) : [];
+    if (skipPatterns.length > 0) {
+      // Filter chunks based on skip patterns
+      const filteredChunks = chunks.map(chunk => {
+        const filteredFiles = diffProcessor.filterFiles(chunk.files, skipPatterns);
+        return {
+          ...chunk,
+          files: filteredFiles,
+          content: filteredFiles.length > 0 ? chunk.content : ''
+        };
+      }).filter(chunk => chunk.files.length > 0 && chunk.content.trim().length > 0);
+
+      if (filteredChunks.length === 0) {
+        core.info("All files filtered out by skip patterns");
+        return;
+      }
+
+      core.info(`Filtered ${chunks.length} chunks to ${filteredChunks.length} after applying skip patterns`);
+    }
+
     if (chunks.length === 0) {
       core.info("No analyzable content found in diff");
       return;
@@ -230,11 +259,11 @@ async function run(): Promise<void> {
       }
     }
 
-    // Create review comment if we have suggestions
-    if (allSuggestions.length > 0) {
-      const reviewComment = generateReviewComment(allSuggestions, prInfo);
-      await githubClient.createReviewComment(owner, repo, prNumber, reviewComment);
+    // Always create a review comment (whether suggestions exist or not)
+    const reviewComment = generateReviewComment(allSuggestions.length > 0 ? allSuggestions : [], prInfo);
+    await githubClient.createReviewComment(owner, repo, prNumber, reviewComment);
 
+    if (allSuggestions.length > 0) {
       // Create individual comment threads for high-severity issues
       const highSeveritySuggestions = allSuggestions.filter(s => s.severity === 'high');
       for (const suggestion of highSeveritySuggestions) {
@@ -250,8 +279,20 @@ async function run(): Promise<void> {
       }
 
       core.info(`Created review comment with ${allSuggestions.length} suggestions`);
+
+      // Set GitHub Actions outputs
+      const reviewSummary = generateActionSummary(allSuggestions, prInfo, reviewFocusInput);
+      core.setOutput('review-summary', reviewSummary);
+      core.setOutput('suggestions-count', allSuggestions.length.toString());
+      core.setOutput('high-severity-count', highSeveritySuggestions.length.toString());
     } else {
-      core.info("No suggestions to create review for");
+      core.info("No suggestions to create review for, but created summary comment");
+
+      // Set outputs for no suggestions case
+      const noSuggestionsSummary = `🤖 AI Code Review Summary\n\n**Focus Areas:** ${reviewFocusInput}\n**Files Analyzed:** ${prInfo.files.length}\n**Suggestions Found:** 0\n\n🎉 No issues found! Your code looks great.`;
+      core.setOutput('review-summary', noSuggestionsSummary);
+      core.setOutput('suggestions-count', '0');
+      core.setOutput('high-severity-count', '0');
     }
 
     if (hasFailures) {
@@ -259,6 +300,9 @@ async function run(): Promise<void> {
     } else {
       core.info("Code review completed successfully");
     }
+
+    // Final output summary
+    core.info(`Review completed with ${allSuggestions.length} suggestions`);
 
   } catch (error) {
     if (error instanceof Error) {
@@ -315,6 +359,42 @@ function generateReviewComment(suggestions: any[], prInfo: any): string {
   }
 
   return comment;
+}
+
+function generateActionSummary(suggestions: any[], prInfo: any, reviewFocus?: string): string {
+  const totalSuggestions = suggestions.length;
+  const severityCount = {
+    high: suggestions.filter(s => s.severity === 'high').length,
+    medium: suggestions.filter(s => s.severity === 'medium').length,
+    low: suggestions.filter(s => s.severity === 'low').length
+  };
+
+  const filesAnalyzed = Array.from(new Set(suggestions.map(s => s.file).filter(Boolean)));
+
+  let summary = `🤖 AI Code Review Summary\n\n`;
+  summary += `**Focus Areas:** ${reviewFocus || 'security,performance,style'}\n`;
+  summary += `**Files Analyzed:** ${filesAnalyzed.length}\n`;
+  summary += `**Suggestions Found:** ${totalSuggestions}\n\n`;
+
+  if (totalSuggestions > 0) {
+    summary += `**Severity Breakdown:**\n`;
+    summary += `- 🔴 High: ${severityCount.high}\n`;
+    summary += `- 🟡 Medium: ${severityCount.medium}\n`;
+    summary += `- 🔵 Low: ${severityCount.low}\n\n`;
+
+    // Add top issues
+    const highSeverityIssues = suggestions.filter(s => s.severity === 'high').slice(0, 3);
+    if (highSeverityIssues.length > 0) {
+      summary += `**🚨 High Priority Issues:**\n`;
+      highSeverityIssues.forEach((issue, i) => {
+        summary += `${i + 1}. ${issue.message} (${issue.file}:${issue.line})\n`;
+      });
+    }
+  } else {
+    summary += `🎉 No issues found! Your code looks great.\n`;
+  }
+
+  return summary;
 }
 
 
