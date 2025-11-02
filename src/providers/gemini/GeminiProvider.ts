@@ -108,7 +108,7 @@ export class GeminiProvider extends ConfigurableProvider {
   }
 
   private buildPrompt(diff: string, context: ReviewContext): string {
-    return `You are an expert code reviewer. Analyze this pull request diff and provide constructive feedback:
+    return `You are an expert code reviewer. Analyze this pull request diff and provide detailed, line-by-line feedback.
 
 Repository: ${context.repository}
 PR Number: ${context.prNumber}
@@ -118,26 +118,39 @@ Branch: ${context.branch}
 ${diff}
 \`\`\`
 
-Please focus on:
-- Security issues and vulnerabilities
-- Performance optimization opportunities
-- Code quality and maintainability
-- Bug potential and edge cases
-- Best practices and design patterns
+ANALYSIS FOCUS:
+- Security vulnerabilities (injections, authentication, data exposure)
+- Performance bottlenecks (inefficient algorithms, memory usage)
+- Code correctness (logic errors, edge cases, race conditions)
+- Code style and maintainability (readability, structure, patterns)
+- Best practices and conventions
 
-Provide your response in this JSON format:
+REVIEW REQUIREMENTS:
+1. Analyze EACH changed function/method individually
+2. For each issue found, provide SPECIFIC line numbers
+3. Suggest concrete improvements with code examples when helpful
+4. Prioritize security and correctness issues
+5. Consider the broader context of the changes
+
+RESPONSE FORMAT (strict JSON):
 {
-  "summary": "Brief summary of your review",
+  "summary": "Detailed summary of your overall review",
   "suggestions": [
     {
       "file": "filename.js",
-      "line": 10,
-      "severity": "low|medium|high",
-      "message": "Description of the issue",
-      "suggestion": "How to fix it (optional)"
+      "line": 15,
+      "severity": "high|medium|low",
+      "message": "Specific description of the issue with context",
+      "suggestion": "Detailed suggestion with code example if applicable"
     }
   ]
-}`;
+}
+
+IMPORTANT:
+- Provide feedback for EVERY significant change
+- Be constructive and educational in your feedback
+- Include both problems and positive observations
+- If code looks good, acknowledge what's done well`;
   }
 
   private parseResponse(content: string): ReviewResult {
