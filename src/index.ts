@@ -49,6 +49,27 @@ async function run(): Promise<void> {
     const skipPatternsInput = core.getInput("skip-patterns", { required: false }) || "";
     console.log("🔍 DEBUG: Got skip patterns:", skipPatternsInput);
 
+    // New configuration options for enhanced commenting
+    const commentAllSeveritiesInput = core.getInput("comment-all-severities", { required: false }) || "true";
+    const commentFormatInput = core.getInput("comment-format", { required: false }) || "enhanced";
+    const maxCommentsPerFileInput = core.getInput("max-comments-per-file", { required: false }) || "10";
+    const includeCodeExamplesInput = core.getInput("include-code-examples", { required: false }) || "true";
+
+    console.log("🔍 DEBUG: Comment all severities:", commentAllSeveritiesInput);
+    console.log("🔍 DEBUG: Comment format:", commentFormatInput);
+    console.log("🔍 DEBUG: Max comments per file:", maxCommentsPerFileInput);
+    console.log("🔍 DEBUG: Include code examples:", includeCodeExamplesInput);
+
+    const commentAllSeverities = commentAllSeveritiesInput.toLowerCase() === 'true';
+    const commentFormat = commentFormatInput.toLowerCase();
+    const maxCommentsPerFile = parseInt(maxCommentsPerFileInput, 10);
+    const includeCodeExamples = includeCodeExamplesInput.toLowerCase() === 'true';
+
+    if (isNaN(maxCommentsPerFile) || maxCommentsPerFile <= 0) {
+      core.setFailed("Max comments per file must be a positive number");
+      return;
+    }
+
     const chunkSize = parseInt(chunkSizeInput, 10);
     console.log("🔍 DEBUG: Parsed chunk size:", chunkSize);
     if (isNaN(chunkSize) || chunkSize <= 0) {

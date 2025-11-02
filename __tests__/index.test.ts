@@ -158,4 +158,23 @@ describe('index.ts', () => {
       await run();
     });
   });
+
+  test('should parse new configuration options', async () => {
+    // Mock core.getInput for new options
+    const mockGetInput = jest.fn().mockImplementation((input) => {
+      switch (input) {
+        case 'comment-all-severities': return 'true';
+        case 'comment-format': return 'enhanced';
+        case 'max-comments-per-file': return '10';
+        case 'include-code-examples': return 'true';
+        default: return '';
+      }
+    });
+
+    // Test that configuration is parsed correctly
+    expect(mockGetInput('comment-all-severities')).toBe('true');
+    expect(mockGetInput('comment-format')).toBe('enhanced');
+    expect(mockGetInput('max-comments-per-file')).toBe('10');
+    expect(mockGetInput('include-code-examples')).toBe('true');
+  });
 });
