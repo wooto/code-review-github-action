@@ -48,7 +48,8 @@ export class OpenAIProvider extends ConfigurableProvider {
       await client.models.list();
       return true;
     } catch (error) {
-      console.warn(`OpenAI health check failed: ${error}`);
+      // Sanitize error message to prevent security leaks
+      console.warn('OpenAI health check failed');
       return false;
     }
   }
@@ -94,7 +95,8 @@ export class OpenAIProvider extends ConfigurableProvider {
 
       return this.parseResponse(content);
     } catch (error) {
-      throw new Error(`OpenAI API error: ${error}`);
+      // Sanitize error message to prevent security leaks
+      throw new Error('OpenAI API error: Request failed');
     } finally {
       // Move to next API key for round-robin
       this.advanceToNextApiKey();
