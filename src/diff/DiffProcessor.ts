@@ -168,7 +168,7 @@ export class DiffProcessor {
         for (const line of lines) {
           if (line.includes('/') && (line.includes('.js') || line.includes('.ts') || line.includes('.jsx') || line.includes('.tsx'))) {
             // Extract potential file paths
-            const potentialFile = line.match(/([a-zA-Z0-9_\-\/\.]+\.(js|ts|jsx|tsx|json|md|yml|yaml))/);
+            const potentialFile = line.match(/([a-zA-Z0-9_\-/.]+\.(js|ts|jsx|tsx|json|md|yml|yaml))/);
             if (potentialFile && !files.includes(potentialFile[1])) {
               files.push(potentialFile[1]);
             }
