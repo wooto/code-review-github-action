@@ -345,11 +345,22 @@ async function run(): Promise<void> {
               line: suggestion.line
             });
 
-            await githubClient.createReviewCommentThread(owner, repo, prNumber, {
-              path: suggestion.file,
-              line: suggestion.line,
-              body: formattedComment
-            });
+            const commentCreated = await githubClient.createReviewCommentWithDeduplication(
+              owner, repo, prNumber, {
+                path: suggestion.file,
+                line: suggestion.line,
+                body: formattedComment,
+                severity: suggestion.severity,
+                category: suggestion.category,
+                suggestion: suggestion.suggestion
+              }
+            );
+
+            if (commentCreated) {
+              core.info(`Created review comment for ${suggestion.file}:${suggestion.line}`);
+            } else {
+              core.info(`Skipped duplicate comment for ${suggestion.file}:${suggestion.line}`);
+            }
           } catch (error) {
             core.warning(`Failed to create review comment for ${suggestion.file}:${suggestion.line}: ${error}`);
           }

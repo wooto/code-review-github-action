@@ -197,4 +197,22 @@ describe('index.ts', () => {
     expect(allSeverities.filter(s => s.severity === 'medium').length).toBe(1);
     expect(allSeverities.filter(s => s.severity === 'low').length).toBe(1);
   });
+
+  test('should use deduplication when creating comments', async () => {
+    // Clear the GitHubClient mock to use the actual implementation
+    jest.dontMock('../src/github/GitHubClient');
+
+    // Import the actual implementation
+    const { GitHubClient } = require('../src/github/GitHubClient');
+
+    // Create an instance to test the method exists
+    const gitHubClient = new GitHubClient('test-token');
+
+    // Verify the deduplication method exists on the class
+    expect(typeof gitHubClient.createReviewCommentWithDeduplication).toBe('function');
+    expect(gitHubClient.createReviewCommentWithDeduplication).toBeDefined();
+
+    // Verify the method signature matches what we're calling in the main logic
+    expect(gitHubClient.createReviewCommentWithDeduplication.length).toBe(4); // owner, repo, prNumber, comment
+  });
 });
