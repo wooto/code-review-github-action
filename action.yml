@@ -1,0 +1,40 @@
+name: 'AI Code Review'
+description: 'Multi-provider AI code review for pull requests'
+author: 'Jesse'
+inputs:
+  github-token:
+    description: 'GitHub token for API access'
+    required: true
+  openai-api-key:
+    description: 'OpenAI API key'
+    required: false
+  claude-api-key:
+    description: 'Anthropic Claude API key'
+    required: false
+  gemini-api-key:
+    description: 'Google Gemini API key'
+    required: false
+  providers:
+    description: 'Comma-separated list of AI providers to use'
+    required: false
+    default: 'openai,claude,gemini'
+  model:
+    description: 'AI model to use for review'
+    required: false
+    default: 'gpt-4'
+  max-tokens:
+    description: 'Maximum tokens for AI response'
+    required: false
+    default: '2000'
+  temperature:
+    description: 'Temperature for AI response generation'
+    required: false
+    default: '0.3'
+outputs:
+  review-summary:
+    description: 'Summary of the code review'
+  issues-found:
+    description: 'Number of issues found during review'
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
