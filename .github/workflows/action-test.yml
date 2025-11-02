@@ -27,8 +27,8 @@ on:
         type: choice
         options:
           - all
-          - openai
-          - claude
+          # - openai  # TODO: Uncomment when OPENAI_API_KEYS secret is available
+          # - claude   # TODO: Uncomment when CLAUDE_API_KEYS secret is available
           - gemini
 
 jobs:
@@ -46,15 +46,15 @@ jobs:
           - provider-failure
           - multi-provider
         provider:
-          - openai
-          - claude
+          # - openai  # TODO: Uncomment when OPENAI_API_KEYS secret is available
+          # - claude   # TODO: Uncomment when CLAUDE_API_KEYS secret is available
           - gemini
         exclude:
           # Exclude combinations that don't make sense
-          - scenario: multi-provider
-            provider: openai
-          - scenario: multi-provider
-            provider: claude
+          # - scenario: multi-provider
+          #   provider: openai  # TODO: Uncomment when OPENAI_API_KEYS secret is available
+          # - scenario: multi-provider
+          #   provider: claude   # TODO: Uncomment when CLAUDE_API_KEYS secret is available
           - scenario: multi-provider
             provider: gemini
           # For multi-provider scenario, use a dedicated combination
@@ -448,12 +448,13 @@ jobs:
           echo "| no-issues | all | ✅ Tested |" >> $GITHUB_STEP_SUMMARY
           echo "| provider-failure | all | ✅ Tested |" >> $GITHUB_STEP_SUMMARY
           echo "| multi-provider | all | ✅ Tested |" >> $GITHUB_STEP_SUMMARY
-          echo "| individual providers | openai/claude/gemini | ✅ Tested |" >> $GITHUB_STEP_SUMMARY
+          echo "| individual providers | gemini | ✅ Tested |" >> $GITHUB_STEP_SUMMARY
+          echo "| disabled providers | openai/claude | ⚠️ Need API secrets |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
           echo "### 🔧 Test Environment" >> $GITHUB_STEP_SUMMARY
           echo "- **Mode**: Integration Testing with Mock Responses" >> $GITHUB_STEP_SUMMARY
-          echo "- **Providers**: OpenAI, Claude, Gemini" >> $GITHUB_STEP_SUMMARY
+          echo "- **Providers**: Gemini (active), OpenAI/Claude (disabled - need API secrets)" >> $GITHUB_STEP_SUMMARY
           echo "- **Verification**: Review comment generation and output validation" >> $GITHUB_STEP_SUMMARY
           echo "- **Cleanup**: Automated artifact management" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
