@@ -22,37 +22,52 @@ export class GitHubClient {
   }
 
   async getPRInfo(owner: string, repo: string, prNumber: number): Promise<PRInfo> {
-    const { data } = await this.octokit.rest.pulls.get({
-      owner,
-      repo,
-      pull_number: prNumber
-    });
+    try {
+      const { data } = await this.octokit.rest.pulls.get({
+        owner,
+        repo,
+        pull_number: prNumber
+      });
 
-    return {
-      number: data.number,
-      title: data.title,
-      baseSha: data.base.sha,
-      headSha: data.head.sha,
-      files: []
-    };
+      // Get the list of files in the PR
+      const { data: files } = await this.octokit.rest.pulls.listFiles({
+        owner,
+        repo,
+        pull_number: prNumber
+      });
+
+      return {
+        number: data.number,
+        title: data.title,
+        baseSha: data.base.sha,
+        headSha: data.head.sha,
+        files: files.map(file => file.filename)
+      };
+    } catch (error) {
+      throw new Error(`Failed to get PR info for ${owner}/${repo}#${prNumber}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   async getPRDiff(owner: string, repo: string, prNumber: number): Promise<string> {
-    const prInfo = await this.getPRInfo(owner, repo, prNumber);
+    try {
+      const prInfo = await this.getPRInfo(owner, repo, prNumber);
 
-    const { data } = await this.octokit.rest.repos.compareCommits({
-      owner,
-      repo,
-      base: prInfo.baseSha,
-      head: prInfo.headSha
-    });
+      const { data } = await this.octokit.rest.repos.compareCommits({
+        owner,
+        repo,
+        base: prInfo.baseSha,
+        head: prInfo.headSha
+      });
 
-    const diffs = data.files
-      ?.filter(file => file.patch)
-      .map(file => `File: ${file.filename}\n${file.patch}`)
-      .join('\n\n') || '';
+      const diffs = data.files
+        ?.filter(file => file.patch)
+        .map(file => `File: ${file.filename}\n${file.patch}`)
+        .join('\n\n') || '';
 
-    return diffs;
+      return diffs;
+    } catch (error) {
+      throw new Error(`Failed to get PR diff for ${owner}/${repo}#${prNumber}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   async createReviewComment(
@@ -62,14 +77,18 @@ export class GitHubClient {
     body: string,
     comments?: ReviewComment[]
   ): Promise<void> {
-    await this.octokit.rest.pulls.createReview({
-      owner,
-      repo,
-      pull_number: prNumber,
-      body,
-      comments: comments || [],
-      event: 'COMMENT'
-    });
+    try {
+      await this.octokit.rest.pulls.createReview({
+        owner,
+        repo,
+        pull_number: prNumber,
+        body,
+        comments: comments || [],
+        event: 'COMMENT'
+      });
+    } catch (error) {
+      throw new Error(`Failed to create review comment for ${owner}/${repo}#${prNumber}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   async createReviewCommentThread(
@@ -78,14 +97,21 @@ export class GitHubClient {
     prNumber: number,
     comment: ReviewComment
   ): Promise<void> {
-    await this.octokit.rest.pulls.createReviewComment({
-      owner,
-      repo,
-      pull_number: prNumber,
-      body: comment.body,
-      commit_id: 'HEAD', // This would typically be the actual commit SHA
-      path: comment.path,
-      line: comment.line
-    });
+    try {
+      // Get the PR info to use the actual head commit SHA
+      const prInfo = await this.getPRInfo(owner, repo, prNumber);
+
+      await this.octokit.rest.pulls.createReviewComment({
+        owner,
+        repo,
+        pull_number: prNumber,
+        body: comment.body,
+        commit_id: prInfo.headSha,
+        path: comment.path,
+        line: comment.line
+      });
+    } catch (error) {
+      throw new Error(`Failed to create review comment thread for ${owner}/${repo}#${prNumber}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 }
