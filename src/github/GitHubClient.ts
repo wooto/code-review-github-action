@@ -1,4 +1,4 @@
-import { Octokit } from '@octokit/rest';
+import { Octokit } from '@actions/github';
 
 export interface PRInfo {
   number: number;

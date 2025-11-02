@@ -3,6 +3,9 @@ module.exports = {
   testEnvironment: 'node',
   roots: ['<rootDir>/src', '<rootDir>/__tests__'],
   testMatch: ['**/__tests__/**/*.test.ts'],
+  transformIgnorePatterns: [
+    'node_modules/(?!(axios|openai|@anthropic-ai/sdk|@google/generative-ai)/)'
+  ],
   testPathIgnorePatterns: [
     '<rootDir>/src/__tests__/mocks/',
     '<rootDir>/src/__tests__/scenarios/'
