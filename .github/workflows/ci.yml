@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop, feature/ci-coverage-fix ]
+    branches: [ main, develop, feature/ci-coverage-fix, feature/ci-improvements-main ]
   pull_request:
     branches: [ main ]
 
