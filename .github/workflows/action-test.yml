@@ -166,18 +166,30 @@ jobs:
               ;;
           esac
 
-          # Download the correct binary
-          DOWNLOAD_URL="https://github.com/nektos/act/releases/download/${ACT_VERSION}/act-Linux-${ACT_ARCH}"
+          # Download the correct binary archive
+          DOWNLOAD_URL="https://github.com/nektos/act/releases/download/${ACT_VERSION}/act_Linux_${ACT_ARCH}.tar.gz"
           echo "📥 Downloading act from: $DOWNLOAD_URL"
 
           # Download with verification
-          curl -fsSL -o act "$DOWNLOAD_URL"
+          curl -fsSL -o act.tar.gz "$DOWNLOAD_URL"
 
-          # Verify the download exists and is executable
-          if [ ! -f "act" ]; then
-            echo "❌ Failed to download act binary"
+          # Verify the download exists
+          if [ ! -f "act.tar.gz" ]; then
+            echo "❌ Failed to download act archive"
             exit 1
           fi
+
+          # Extract the binary from tar.gz
+          tar -xzf act.tar.gz
+
+          # Verify extraction and clean up
+          if [ ! -f "act" ]; then
+            echo "❌ Failed to extract act binary from archive"
+            exit 1
+          fi
+
+          # Clean up archive file
+          rm act.tar.gz
 
           # Make executable
           chmod +x act
