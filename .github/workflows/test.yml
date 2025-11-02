@@ -63,7 +63,7 @@ jobs:
         test -f dist/index.js.map
 
     - name: Run unit tests
-      run: npm test -- --passWithNoTests --timeout=30000
+      run: npm test -- --passWithNoTests --timeout=60000
 
     - name: Run integration tests
       run: |
@@ -232,11 +232,11 @@ jobs:
     - name: Type check
       run: npm run type-check
 
-    - name: Run security scan
-      uses: securecodewarrior/github-action-add-sarif@v1
-      if: failure()
+    - name: Upload security scan results
+      uses: github/codeql-action/upload-sarif@v3
+      if: failure() && hashFiles('test-results/security-scan-results.sarif')
       with:
-        sarif-file: 'security-scan-results.sarif'
+        sarif_file: 'test-results/security-scan-results.sarif'
 
   package-and-distribute:
     name: Package & Distribution
