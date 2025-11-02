@@ -97,21 +97,32 @@ const testPerformance = {
 // Global test performance tracking
 (global as any).testPerformance = testPerformance;
 
-// Enhanced console reporting
+// Enhanced console reporting (only in verbose mode)
+const DEBUG = process.env.NODE_ENV === 'development' || process.env.VERBOSE_TESTS === 'true';
 const originalConsoleLog = console.log;
 console.log = (...args) => {
-  // Add timestamp to all test logs
-  const timestamp = new Date().toISOString();
-  originalConsoleLog(`[${timestamp}]`, ...args);
+  if (DEBUG) {
+    // Add timestamp to all test logs
+    const timestamp = new Date().toISOString();
+    originalConsoleLog(`[${timestamp}]`, ...args);
+  } else {
+    // Minimal logging in CI
+    const message = args.join(' ');
+    if (message.includes('FAIL') || message.includes('PASS') || message.includes('Error')) {
+      originalConsoleLog(...args);
+    }
+  }
 };
 
-// Test environment info
-console.log('🧪 Test Environment Information:');
-console.log(`- Node.js: ${process.version}`);
-console.log(`- Platform: ${process.platform}`);
-console.log(`- Architecture: ${process.arch}`);
-console.log(`- PID: ${process.pid}`);
-console.log(`- Memory (initial): ${JSON.stringify(process.memoryUsage())}`);
+// Test environment info (only in debug mode)
+if (DEBUG) {
+  console.log('🧪 Test Environment Information:');
+  console.log(`- Node.js: ${process.version}`);
+  console.log(`- Platform: ${process.platform}`);
+  console.log(`- Architecture: ${process.arch}`);
+  console.log(`- PID: ${process.pid}`);
+  console.log(`- Memory (initial): ${JSON.stringify(process.memoryUsage())}`);
+}
 
 // Coverage reporting enhancement
 const originalCoverageReporters = (global as any).coverageReporters || [];
