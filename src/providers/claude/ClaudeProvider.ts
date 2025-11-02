@@ -1,5 +1,5 @@
-import { ConfigurableProvider, ProviderConfig } from '../BaseProvider';
-import { ReviewContext, ReviewResult, ReviewSuggestion } from '../IProvider';
+import { ConfigurableProvider } from '../BaseProvider';
+import { ReviewContext, ReviewResult } from '../IProvider';
 import Anthropic from '@anthropic-ai/sdk';
 
 export interface ClaudeConfig {
@@ -51,7 +51,7 @@ export class ClaudeProvider extends ConfigurableProvider {
         messages: [{ role: 'user', content: 'Hi' }]
       });
       return true;
-    } catch (error) {
+    } catch {
       // Sanitize error message to prevent security leaks
       console.warn('Claude health check failed');
       return false;
@@ -93,7 +93,7 @@ export class ClaudeProvider extends ConfigurableProvider {
       }
 
       return this.parseResponse(content.text);
-    } catch (error) {
+    } catch {
       // Sanitize error message to prevent security leaks
       throw new Error('Claude API error: Request failed');
     } finally {
@@ -167,7 +167,7 @@ Provide your response in this JSON format:
         suggestions: parsed.suggestions || [],
         confidence: 0.85
       };
-    } catch (error) {
+    } catch {
       // Fallback if JSON parsing fails
       return {
         summary: content,

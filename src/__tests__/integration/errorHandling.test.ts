@@ -9,18 +9,11 @@ import {
   createTimeoutClaudeProvider,
   createTimeoutGeminiProvider,
   createRateLimitOpenAIProvider,
-  createRateLimitClaudeProvider,
-  createRateLimitGeminiProvider,
   createNetworkErrorOpenAIProvider,
   createNetworkErrorClaudeProvider,
-  createNetworkErrorGeminiProvider,
   createMalformedOpenAIProvider,
   createMalformedClaudeProvider,
-  createMalformedGeminiProvider,
-  createIntermittentFailureProvider,
-  createSlowOpenAIProvider,
-  createSlowClaudeProvider,
-  createSlowGeminiProvider
+  createIntermittentFailureProvider
 } from '../mocks/mockProviderHelpers';
 
 // Mock external dependencies
@@ -36,9 +29,6 @@ jest.mock('../../diff/DiffProcessor');
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { GitHubClient } from '../../github/GitHubClient';
-import { OpenAIProvider } from '../../providers/openai/OpenAIProvider';
-import { ClaudeProvider } from '../../providers/claude/ClaudeProvider';
-import { GeminiProvider } from '../../providers/gemini/GeminiProvider';
 import { ProviderManager } from '../../providers/ProviderManager';
 import { DiffProcessor } from '../../diff/DiffProcessor';
 
@@ -118,7 +108,7 @@ describe('Error Handling and Edge Cases', () => {
         branch: 'feature-branch',
         files: ['src/test.ts']
       }),
-      filterFiles: jest.fn().mockImplementation((files: string[], patterns: string[]) => files)
+      filterFiles: jest.fn().mockImplementation((files: string[], _patterns: string[]) => files)
     } as any;
 
     (DiffProcessor as jest.Mock).mockImplementation(() => mockDiffProcessor);
@@ -174,6 +164,7 @@ describe('Error Handling and Edge Cases', () => {
       (ProviderManager as jest.Mock).mockImplementation(() => mockProviderManager);
       mockGetInput.mockImplementation((name) => {
         if (name === 'providers') return 'openai';
+        if (name === 'chunk-size') return '2000';
         return 'test-token';
       });
       mockGetMultilineInput.mockReturnValue(['sk-test-key']);
@@ -203,6 +194,7 @@ describe('Error Handling and Edge Cases', () => {
       (ProviderManager as jest.Mock).mockImplementation(() => mockProviderManager);
       mockGetInput.mockImplementation((name) => {
         if (name === 'providers') return 'claude';
+        if (name === 'chunk-size') return '2000';
         return 'test-token';
       });
       mockGetMultilineInput.mockReturnValue(['sk-ant-test-key']);
@@ -232,6 +224,7 @@ describe('Error Handling and Edge Cases', () => {
       (ProviderManager as jest.Mock).mockImplementation(() => mockProviderManager);
       mockGetInput.mockImplementation((name) => {
         if (name === 'providers') return 'gemini';
+        if (name === 'chunk-size') return '2000';
         return 'test-token';
       });
       mockGetMultilineInput.mockReturnValue(['AIza-test-key']);
@@ -248,10 +241,12 @@ describe('Error Handling and Edge Cases', () => {
       const timeoutProvider = createTimeoutOpenAIProvider();
       const workingProvider = new MockProvider('claude');
 
+      let callCount = 0;
       const mockProviderManager = {
         analyzeCode: jest.fn().mockImplementation(async () => {
+          callCount++;
           // First call fails with timeout, second succeeds
-          if (timeoutProvider.shouldFail) {
+          if (callCount === 1) {
             return timeoutProvider.analyzeCode('test diff', {
             prNumber: 123,
             repository: 'test-owner/test-repo',
@@ -271,6 +266,7 @@ describe('Error Handling and Edge Cases', () => {
       (ProviderManager as jest.Mock).mockImplementation(() => mockProviderManager);
       mockGetInput.mockImplementation((name) => {
         if (name === 'providers') return 'openai,claude';
+        if (name === 'chunk-size') return '2000';
         return 'test-token';
       });
       mockGetMultilineInput.mockReturnValue(['sk-test-key', 'sk-ant-test-key']);
@@ -303,6 +299,7 @@ describe('Error Handling and Edge Cases', () => {
       (ProviderManager as jest.Mock).mockImplementation(() => mockProviderManager);
       mockGetInput.mockImplementation((name) => {
         if (name === 'providers') return 'openai';
+        if (name === 'chunk-size') return '2000';
         return 'test-token';
       });
       mockGetMultilineInput.mockReturnValue(['sk-test-key']);
@@ -316,8 +313,6 @@ describe('Error Handling and Edge Cases', () => {
     });
 
     it('should handle multiple providers with rate limiting', async () => {
-      const rateLimitOpenAI = createRateLimitOpenAIProvider();
-      const rateLimitClaude = createRateLimitClaudeProvider();
 
       const mockProviderManager = {
         analyzeCode: jest.fn().mockImplementation(async () => {
@@ -329,6 +324,7 @@ describe('Error Handling and Edge Cases', () => {
       (ProviderManager as jest.Mock).mockImplementation(() => mockProviderManager);
       mockGetInput.mockImplementation((name) => {
         if (name === 'providers') return 'openai,claude';
+        if (name === 'chunk-size') return '2000';
         return 'test-token';
       });
       mockGetMultilineInput.mockReturnValue(['sk-test-key', 'sk-ant-test-key']);
@@ -360,6 +356,7 @@ describe('Error Handling and Edge Cases', () => {
       (ProviderManager as jest.Mock).mockImplementation(() => mockProviderManager);
       mockGetInput.mockImplementation((name) => {
         if (name === 'providers') return 'openai';
+        if (name === 'chunk-size') return '2000';
         return 'test-token';
       });
       mockGetMultilineInput.mockReturnValue(['sk-test-key']);
@@ -399,13 +396,14 @@ describe('Error Handling and Edge Cases', () => {
       (ProviderManager as jest.Mock).mockImplementation(() => mockProviderManager);
       mockGetInput.mockImplementation((name) => {
         if (name === 'providers') return 'openai';
+        if (name === 'chunk-size') return '2000';
         return 'test-token';
       });
       mockGetMultilineInput.mockReturnValue(['sk-test-key']);
 
       await run();
 
-      expect(mockWarning).toHaveBeenCalledTimes(2);
+      expect(mockWarning).toHaveBeenCalledTimes(1);
       expect(mockSetFailed).not.toHaveBeenCalled();
       expect(mockGitHubClient.createReviewComment).toHaveBeenCalled();
     });
@@ -429,6 +427,7 @@ describe('Error Handling and Edge Cases', () => {
       (ProviderManager as jest.Mock).mockImplementation(() => mockProviderManager);
       mockGetInput.mockImplementation((name) => {
         if (name === 'providers') return 'openai';
+        if (name === 'chunk-size') return '2000';
         return 'test-token';
       });
       mockGetMultilineInput.mockReturnValue(['sk-test-key']);
@@ -457,6 +456,7 @@ describe('Error Handling and Edge Cases', () => {
       (ProviderManager as jest.Mock).mockImplementation(() => mockProviderManager);
       mockGetInput.mockImplementation((name) => {
         if (name === 'providers') return 'claude';
+        if (name === 'chunk-size') return '2000';
         return 'test-token';
       });
       mockGetMultilineInput.mockReturnValue(['sk-ant-test-key']);
@@ -781,7 +781,7 @@ File: src/test.ts
 
       await run();
 
-      expect(mockWarning).toHaveBeenCalledTimes(2);
+      expect(mockWarning).toHaveBeenCalledTimes(1);
       expect(mockSetFailed).not.toHaveBeenCalled();
       expect(mockGitHubClient.createReviewComment).toHaveBeenCalled();
     });

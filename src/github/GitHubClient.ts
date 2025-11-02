@@ -1,4 +1,4 @@
-import { Octokit } from '@octokit/rest';
+import { getOctokit } from '@actions/github';
 
 export interface PRInfo {
   number: number;
@@ -15,10 +15,10 @@ export interface ReviewComment {
 }
 
 export class GitHubClient {
-  private octokit: Octokit;
+  private octokit: ReturnType<typeof getOctokit>;
 
   constructor(token: string) {
-    this.octokit = new Octokit({ auth: token });
+    this.octokit = getOctokit(token);
   }
 
   async getPRInfo(owner: string, repo: string, prNumber: number): Promise<PRInfo> {
@@ -41,7 +41,7 @@ export class GitHubClient {
         title: data.title,
         baseSha: data.base.sha,
         headSha: data.head.sha,
-        files: files.map(file => file.filename)
+        files: files.map((file: { filename: string }) => file.filename)
       };
     } catch (error) {
       throw new Error(`Failed to get PR info for ${owner}/${repo}#${prNumber}: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -60,8 +60,8 @@ export class GitHubClient {
       });
 
       const diffs = data.files
-        ?.filter(file => file.patch)
-        .map(file => `File: ${file.filename}\n${file.patch}`)
+        ?.filter((file: { patch?: string }) => file.patch)
+        .map((file: { filename: string; patch?: string }) => `File: ${file.filename}\n${file.patch || ''}`)
         .join('\n\n') || '';
 
       return diffs;

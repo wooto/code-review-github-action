@@ -1,5 +1,5 @@
-import { ConfigurableProvider, ProviderConfig } from '../BaseProvider';
-import { ReviewContext, ReviewResult, ReviewSuggestion } from '../IProvider';
+import { ConfigurableProvider } from '../BaseProvider';
+import { ReviewContext, ReviewResult } from '../IProvider';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export interface GeminiConfig {
@@ -46,7 +46,7 @@ export class GeminiProvider extends ConfigurableProvider {
       // Try a simple generation to verify the API key works
       await model.generateContent('Hi');
       return true;
-    } catch (error) {
+    } catch {
       // Sanitize error message to prevent security leaks
       console.warn('Gemini health check failed');
       return false;
@@ -80,7 +80,7 @@ export class GeminiProvider extends ConfigurableProvider {
       }
 
       return this.parseResponse(content);
-    } catch (error) {
+    } catch {
       // Sanitize error message to prevent security leaks
       throw new Error('Gemini API error: Request failed');
     } finally {
@@ -154,7 +154,7 @@ Provide your response in this JSON format:
         suggestions: parsed.suggestions || [],
         confidence: 0.82
       };
-    } catch (error) {
+    } catch {
       // Fallback if JSON parsing fails
       return {
         summary: content,

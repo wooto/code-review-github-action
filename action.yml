@@ -2,17 +2,33 @@ name: 'Code Review GitHub Action'
 description: 'Automated code review for pull requests'
 author: 'Jesse'
 inputs:
-  github_token:
+  github-token:
     description: 'GitHub token for API access'
     required: true
-  max_files:
-    description: 'Maximum number of files to review'
+  providers:
+    description: 'AI providers to use (comma-separated)'
+    required: true
+  chunk-size:
+    description: 'Chunk size for processing diff'
     required: false
-    default: '10'
-  file_extensions:
-    description: 'File extensions to review (comma-separated)'
+    default: '2000'
+  review-focus:
+    description: 'Review focus areas (comma-separated)'
     required: false
-    default: '.js,.ts,.jsx,.tsx,.py,.java,.go,.rs,.php'
+    default: 'security,performance,style'
+  skip-patterns:
+    description: 'File patterns to skip (comma-separated)'
+    required: false
+    default: ''
+  openai-api-keys:
+    description: 'OpenAI API keys (multiline)'
+    required: false
+  claude-api-keys:
+    description: 'Claude API keys (multiline)'
+    required: false
+  gemini-api-keys:
+    description: 'Gemini API keys (multiline)'
+    required: false
 outputs:
   review_summary:
     description: 'Summary of the code review'

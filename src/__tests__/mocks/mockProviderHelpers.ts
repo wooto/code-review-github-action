@@ -30,7 +30,7 @@ export class MockProvider implements IProvider {
     this.delayMs = delayMs;
   }
 
-  async analyzeCode(diff: string, context: ReviewContext): Promise<ReviewResult> {
+  async analyzeCode(_diff: string, _context: ReviewContext): Promise<ReviewResult> {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, this.delayMs + Math.random() * 200));
 
@@ -40,13 +40,13 @@ export class MockProvider implements IProvider {
 
       switch (this.failureType) {
         case 'timeout':
-          throw new Error(`${this.name} API timeout: Request timed out after 30000ms`);
+          throw new Error(`${this.name} API timeout`);
 
         case 'rate-limit':
-          throw new Error(`${this.name} API rate limit exceeded: Retry after ${Math.floor(Math.random() * 60) + 1} seconds`);
+          throw new Error(`${this.name} API rate limit exceeded`);
 
         case 'network':
-          throw new Error(`${this.name} Network error: Unable to reach API endpoint`);
+          throw new Error(`${this.name} Network error`);
 
         case 'malformed':
           // Return malformed data that might cause issues downstream
@@ -212,7 +212,7 @@ export const createMalformedGeminiProvider = (): MockProvider => {
 export const createIntermittentFailureProvider = (
   name: string,
   failureCount: number = 1,
-  totalRequests: number = 3
+  _totalRequests: number = 3
 ): MockProvider => {
   return new MockProvider(name, 'basic-review', true, 'Intermittent failure', 'error', failureCount);
 };

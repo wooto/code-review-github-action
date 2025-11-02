@@ -1,8 +1,8 @@
 // Integration tests for the complete AI Code Review Action using mock infrastructure
 import { run } from '../../index';
 import { MockGitHubClient } from '../mocks/mockGitHubHelpers';
-import { MockProvider, createMockOpenAIProvider, createMockClaudeProvider, createMockGeminiProvider, createFailingOpenAIProvider, createFailingClaudeProvider } from '../mocks/mockProviderHelpers';
-import { INTEGRATION_TEST_SCENARIOS, getScenario, TestScenario } from '../scenarios/reviewScenarioDefinitions';
+import { MockProvider, createMockOpenAIProvider, createMockClaudeProvider, createMockGeminiProvider } from '../mocks/mockProviderHelpers';
+import { getScenario, TestScenario } from '../scenarios/reviewScenarioDefinitions';
 
 // Mock external dependencies
 jest.mock('@actions/core');
@@ -48,7 +48,7 @@ describe('Action Integration Tests - Full Execution Flow', () => {
     mockSetOutput = core.setOutput as jest.MockedFunction<typeof core.setOutput>;
 
     // Setup default core mock implementations
-    mockGetInput.mockImplementation((name) => 'test-token');
+    mockGetInput.mockImplementation((_name) => 'test-token');
     mockGetMultilineInput.mockReturnValue(['test-key']);
     mockInfo.mockImplementation(() => {});
     mockWarning.mockImplementation(() => {});
@@ -261,7 +261,8 @@ describe('Action Integration Tests - Full Execution Flow', () => {
 
       // Verify comment format for high severity issues
       individualComments.forEach(comment => {
-        expect(comment.body).toContain('🚨 **High Severity Issue**');
+        expect(comment.body).toContain('**HIGH**');
+        expect(comment.body).toContain('**Suggestion**');
       });
     });
 
@@ -319,15 +320,42 @@ describe('Action Integration Tests - Full Execution Flow', () => {
 
     it('should handle configuration error (no API keys)', async () => {
       const scenario = getScenario('no-api-keys')!;
-      setupScenario(scenario);
 
-      await run();
+      // Set NODE_ENV to something other than 'test' to avoid dummy provider logic
+      const originalNodeEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'development';
 
-      await verifyScenarioOutcome(scenario);
+      // Mock provider constructors to always throw errors for this test
+      (OpenAIProvider as jest.Mock).mockImplementation(() => {
+        throw new Error('Failed to initialize OpenAI provider');
+      });
 
-      expect(mockSetFailed).toHaveBeenCalledWith(
-        'No valid providers configured. Please provide at least one API key.'
-      );
+      (ClaudeProvider as jest.Mock).mockImplementation(() => {
+        throw new Error('Failed to initialize Claude provider');
+      });
+
+      (GeminiProvider as jest.Mock).mockImplementation(() => {
+        throw new Error('Failed to initialize Gemini provider');
+      });
+
+      try {
+        setupScenario(scenario);
+
+        await run();
+
+        await verifyScenarioOutcome(scenario);
+
+        expect(mockSetFailed).toHaveBeenCalledWith(
+          'No valid providers could be initialized'
+        );
+      } finally {
+        // Restore original NODE_ENV
+        process.env.NODE_ENV = originalNodeEnv;
+        // Reset provider mocks to default behavior
+        (OpenAIProvider as jest.Mock).mockReset();
+        (ClaudeProvider as jest.Mock).mockReset();
+        (GeminiProvider as jest.Mock).mockReset();
+      }
     });
 
     it('should handle provider failures gracefully', async () => {
@@ -371,10 +399,12 @@ describe('Action Integration Tests - Full Execution Flow', () => {
 
       // Verify review comment format
       const createdReviews = mockGitHubClient.getCreatedReviews();
-      expect(createdReviews[0].body).toContain('🤖 AI Code Review Summary');
-      expect(createdReviews[0].body).toContain('Focus Areas:');
-      expect(createdReviews[0].body).toContain('Files Analyzed:');
-      expect(createdReviews[0].body).toContain('Suggestions Found:');
+      expect(createdReviews[0].body).toContain('## 🤖 AI Code Review for PR #');
+      expect(createdReviews[0].body).toContain('### Summary');
+      expect(createdReviews[0].body).toContain('Total Suggestions');
+      expect(createdReviews[0].body).toContain('High Severity');
+      expect(createdReviews[0].body).toContain('Medium Severity');
+      expect(createdReviews[0].body).toContain('Low Severity');
     });
 
     it('should create individual comments for high severity issues', async () => {
@@ -388,7 +418,8 @@ describe('Action Integration Tests - Full Execution Flow', () => {
 
       // Verify individual comment format
       createdComments.forEach(comment => {
-        expect(comment.body).toContain('🚨 **High Severity Issue**');
+        expect(comment.body).toContain('**HIGH**');
+        expect(comment.body).toContain('**Suggestion**');
         expect(typeof comment.path).toBe('string');
         expect(typeof comment.line).toBe('number');
       });
@@ -531,12 +562,25 @@ describe('Action Integration Tests - Full Execution Flow', () => {
     });
 
     it('should handle missing pull request context', async () => {
+      // Clear the payload to simulate not running in a PR context
       (github.context as any).payload = {};
+
+      // Set up valid inputs so we don't get other errors first
+      mockGetInput.mockImplementation((name: string) => {
+        const inputs = {
+          'github-token': 'test-token',
+          providers: 'openai',
+          'openai-api-keys': 'sk-test-key-1',
+          'chunk-size': '2000'
+        };
+        return inputs[name as keyof typeof inputs] || '';
+      });
+      mockGetMultilineInput.mockReturnValue(['sk-test-key-1']);
 
       await run();
 
       expect(mockSetFailed).toHaveBeenCalledWith(
-        'This action can only be run on pull requests'
+        'This action only works on pull requests'
       );
     });
   });

@@ -1,8 +1,8 @@
 import { GitHubClient } from '../../src/github/GitHubClient';
-import { Octokit } from '@octokit/rest';
+import * as github from '@actions/github';
 
-jest.mock('@octokit/rest');
-const MockedOctokit = Octokit as jest.MockedClass<typeof Octokit>;
+jest.mock('@actions/github');
+const mockGithub = github as jest.Mocked<typeof github>;
 
 describe('GitHubClient', () => {
   it('should fetch PR diff successfully', async () => {
@@ -30,7 +30,7 @@ describe('GitHubClient', () => {
       }
     });
 
-    MockedOctokit.mockImplementation(() => ({
+    mockGithub.getOctokit.mockReturnValue({
       rest: {
         pulls: {
           get: mockGetPR,
@@ -40,7 +40,7 @@ describe('GitHubClient', () => {
           compareCommits: mockCompareCommits
         }
       }
-    } as any));
+    } as any);
 
     const client = new GitHubClient('test-token');
     const diff = await client.getPRDiff('owner', 'repo', 123);
@@ -75,14 +75,14 @@ describe('GitHubClient', () => {
       ]
     });
 
-    MockedOctokit.mockImplementation(() => ({
+    mockGithub.getOctokit.mockReturnValue({
       rest: {
         pulls: {
           get: mockGetPR,
           listFiles: mockListFiles
         }
       }
-    } as any));
+    } as any);
 
     const client = new GitHubClient('test-token');
     const prInfo = await client.getPRInfo('owner', 'repo', 123);
@@ -110,7 +110,7 @@ describe('GitHubClient', () => {
 
     const mockCreateReviewComment = jest.fn().mockResolvedValue({});
 
-    MockedOctokit.mockImplementation(() => ({
+    mockGithub.getOctokit.mockReturnValue({
       rest: {
         pulls: {
           get: mockGetPR,
@@ -118,7 +118,7 @@ describe('GitHubClient', () => {
           createReviewComment: mockCreateReviewComment
         }
       }
-    } as any));
+    } as any);
 
     const client = new GitHubClient('test-token');
     await client.createReviewCommentThread('owner', 'repo', 123, {
@@ -141,14 +141,14 @@ describe('GitHubClient', () => {
   it('should handle errors when getting PR info', async () => {
     const mockGetPR = jest.fn().mockRejectedValue(new Error('API Error'));
 
-    MockedOctokit.mockImplementation(() => ({
+    mockGithub.getOctokit.mockReturnValue({
       rest: {
         pulls: {
           get: mockGetPR,
           listFiles: jest.fn()
         }
       }
-    } as any));
+    } as any);
 
     const client = new GitHubClient('test-token');
 
