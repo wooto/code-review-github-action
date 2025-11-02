@@ -541,7 +541,7 @@ describe('Integration Tests - Complete Workflow', () => {
         expect.any(String),
         expect.any(String),
         expect.any(Number),
-        expect.stringContaining('✅ **Great job!** No suggestions found.')
+        expect.stringContaining('### ✅ Excellent Work!')
       );
     });
 
