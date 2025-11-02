@@ -1,40 +1,47 @@
 name: 'AI Code Review'
-description: 'Multi-provider AI code review for pull requests'
-author: 'Jesse'
+description: 'Multi-provider AI code review for pull requests with round-robin API key rotation'
+author: 'Your Name'
 inputs:
   github-token:
     description: 'GitHub token for API access'
     required: true
-  openai-api-key:
-    description: 'OpenAI API key'
+  openai-api-keys:
+    description: 'OpenAI API keys (array for round-robin)'
     required: false
-  claude-api-key:
-    description: 'Anthropic Claude API key'
+  claude-api-keys:
+    description: 'Anthropic Claude API keys (array for round-robin)'
     required: false
-  gemini-api-key:
-    description: 'Google Gemini API key'
+  gemini-api-keys:
+    description: 'Google Gemini API keys (array for round-robin)'
     required: false
   providers:
-    description: 'Comma-separated list of AI providers to use'
+    description: 'Comma-separated list of providers to use'
     required: false
     default: 'openai,claude,gemini'
-  model:
-    description: 'AI model to use for review'
+  review-focus:
+    description: 'Comma-separated areas to focus on'
     required: false
-    default: 'gpt-4'
-  max-tokens:
-    description: 'Maximum tokens for AI response'
+    default: 'security,performance,style'
+  chunk-size:
+    description: 'Maximum chunk size for code analysis'
     required: false
     default: '2000'
-  temperature:
-    description: 'Temperature for AI response generation'
+  custom-prompt:
+    description: 'Custom instructions for the AI'
     required: false
-    default: '0.3'
+  skip-patterns:
+    description: 'File patterns to skip'
+    required: false
+    default: '*.min.js,package-lock.json'
+  fail-fast:
+    description: 'Stop on first provider failure (default: continue with other providers)'
+    required: false
+    default: 'false'
 outputs:
   review-summary:
     description: 'Summary of the code review'
-  issues-found:
-    description: 'Number of issues found during review'
+  providers-used:
+    description: 'List of providers used in this review'
 runs:
   using: 'node20'
   main: 'dist/index.js'

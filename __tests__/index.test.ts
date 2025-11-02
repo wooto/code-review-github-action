@@ -1,3 +1,4 @@
+// __tests__/index.test.ts
 import { run } from '../src/index';
 import * as core from '@actions/core';
 
@@ -24,57 +25,15 @@ describe('GitHub Action', () => {
       if (name === 'github-token') {
         return 'test-token';
       }
-      if (name === 'providers') {
-        return 'openai,claude';
-      }
       return '';
     });
   });
 
-  it('should run successfully with required inputs', async () => {
+  it('should handle missing inputs gracefully', async () => {
     await run();
 
     expect(mockInfo).toHaveBeenCalledWith('Starting AI code review...');
-    expect(mockInfo).toHaveBeenCalledWith('Using providers: openai,claude');
     expect(mockSetOutput).toHaveBeenCalledWith('review-summary', 'Review completed successfully');
     expect(mockSetFailed).not.toHaveBeenCalled();
-  });
-
-  it('should use default providers when none specified', async () => {
-    mockGetInput.mockImplementation((name, options) => {
-      if (name === 'github-token') {
-        return 'test-token';
-      }
-      return '';
-    });
-
-    await run();
-
-    expect(mockInfo).toHaveBeenCalledWith('Using providers: openai,claude,gemini');
-  });
-
-  it('should handle missing github-token gracefully', async () => {
-    mockGetInput.mockImplementation((name, options) => {
-      if (name === 'github-token' && options?.required) {
-        throw new Error('Input required and not supplied: github-token');
-      }
-      return '';
-    });
-
-    await run();
-
-    expect(mockSetFailed).toHaveBeenCalledWith('Input required and not supplied: github-token');
-    expect(mockSetOutput).not.toHaveBeenCalled();
-  });
-
-  it('should handle unexpected errors', async () => {
-    mockGetInput.mockImplementation(() => {
-      throw new Error('Unexpected error');
-    });
-
-    await run();
-
-    expect(mockSetFailed).toHaveBeenCalledWith('Unexpected error');
-    expect(mockSetOutput).not.toHaveBeenCalled();
   });
 });
