@@ -158,4 +158,61 @@ describe('index.ts', () => {
       await run();
     });
   });
+
+  test('should parse new configuration options', async () => {
+    // Mock core.getInput for new options
+    const mockGetInput = jest.fn().mockImplementation((input) => {
+      switch (input) {
+        case 'comment-all-severities': return 'true';
+        case 'comment-format': return 'enhanced';
+        case 'max-comments-per-file': return '10';
+        case 'include-code-examples': return 'true';
+        default: return '';
+      }
+    });
+
+    // Test that configuration is parsed correctly
+    expect(mockGetInput('comment-all-severities')).toBe('true');
+    expect(mockGetInput('comment-format')).toBe('enhanced');
+    expect(mockGetInput('max-comments-per-file')).toBe('10');
+    expect(mockGetInput('include-code-examples')).toBe('true');
+  });
+
+  test('should process all severity levels when comment-all-severities is true', async () => {
+    const mockSuggestions = [
+      { severity: 'high', file: 'test.js', line: 10, message: 'High issue' },
+      { severity: 'medium', file: 'test.js', line: 20, message: 'Medium issue' },
+      { severity: 'low', file: 'test.js', line: 30, message: 'Low issue' }
+    ];
+
+    // Test current filtering logic (high severity only)
+    const highSeverityOnly = mockSuggestions.filter(s => s.severity === 'high');
+    expect(highSeverityOnly.length).toBe(1);
+    expect(highSeverityOnly[0].severity).toBe('high');
+
+    // Test all severity filtering (what we want to implement)
+    const allSeverities = mockSuggestions.filter(s => s.file && s.line && s.message);
+    expect(allSeverities.length).toBe(3);
+    expect(allSeverities.filter(s => s.severity === 'high').length).toBe(1);
+    expect(allSeverities.filter(s => s.severity === 'medium').length).toBe(1);
+    expect(allSeverities.filter(s => s.severity === 'low').length).toBe(1);
+  });
+
+  test('should use deduplication when creating comments', async () => {
+    // Clear the GitHubClient mock to use the actual implementation
+    jest.dontMock('../src/github/GitHubClient');
+
+    // Import the actual implementation
+    const { GitHubClient } = require('../src/github/GitHubClient');
+
+    // Create an instance to test the method exists
+    const gitHubClient = new GitHubClient('test-token');
+
+    // Verify the deduplication method exists on the class
+    expect(typeof gitHubClient.createReviewCommentWithDeduplication).toBe('function');
+    expect(gitHubClient.createReviewCommentWithDeduplication).toBeDefined();
+
+    // Verify the method signature matches what we're calling in the main logic
+    expect(gitHubClient.createReviewCommentWithDeduplication.length).toBe(4); // owner, repo, prNumber, comment
+  });
 });

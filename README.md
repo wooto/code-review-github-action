@@ -75,6 +75,10 @@ This architecture is designed for easy migration to standalone bot service:
 | `chunk-size` | Max chunk size for analysis | `2000` |
 | `custom-prompt` | Custom review instructions | - |
 | `skip-patterns` | File patterns to ignore | `*.min.js,package-lock.json` |
+| `comment-all-severities` | Create comments for all severity levels | `true` |
+| `comment-format` | Comment formatting style | `enhanced` |
+| `max-comments-per-file` | Maximum comments per file | `10` |
+| `include-code-examples` | Include code examples in comments | `true` |
 
 ## Examples
 
