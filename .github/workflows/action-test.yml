@@ -31,6 +31,9 @@ on:
           # - claude   # TODO: Uncomment when CLAUDE_API_KEYS secret is available
           - gemini
 
+permissions:
+  contents: read
+
 jobs:
   test-action:
     runs-on: ubuntu-latest
@@ -79,13 +82,14 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           fetch-depth: 0
+          persist-credentials: false
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '20'
           cache: 'npm'
@@ -99,7 +103,7 @@ jobs:
           sudo apt-get install -y jq
 
       - name: Build action
-        run: npm run build
+        run: npm run build:all
 
       - name: Verify build artifacts
         run: |
@@ -279,7 +283,9 @@ jobs:
             test:
               runs-on: ubuntu-latest
               steps:
-                - uses: actions/checkout@v4
+                - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+                  with:
+                    persist-credentials: false
                 - name: Test AI Code Review Action
                   uses: ./
                   with:
@@ -409,7 +415,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: action-test-results-${{ matrix.scenario }}-${{ matrix.provider }}
           path: |
@@ -420,7 +426,7 @@ jobs:
 
       - name: Upload test configuration
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: test-configuration-${{ matrix.scenario }}-${{ matrix.provider }}
           path: |

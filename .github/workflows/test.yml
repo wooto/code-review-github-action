@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+
 env:
   NODE_VERSION: '20.x'
 
@@ -22,16 +25,18 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      with:
+        persist-credentials: false
 
     - name: Setup Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
 
     - name: Cache node modules
-      uses: actions/cache@v4
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
       with:
         path: ~/.npm
         key: ${{ runner.os }}-node-${{ matrix.node-version }}-${{ hashFiles('**/package-lock.json') }}
@@ -43,7 +48,7 @@ jobs:
       run: npm ci --prefer-offline --no-audit
 
     - name: Cache build artifacts
-      uses: actions/cache@v4
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
       with:
         path: |
           dist/
@@ -144,7 +149,7 @@ jobs:
 
     - name: Upload test artifacts
       if: matrix.node-version == '20.x'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
       with:
         name: comprehensive-test-results
         path: |
@@ -155,7 +160,7 @@ jobs:
 
     - name: Upload coverage to Codecov
       if: matrix.node-version == '20.x'
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238
       with:
         file: ./coverage/lcov.info
         flags: comprehensive
@@ -200,19 +205,24 @@ jobs:
     name: Security & Dependency Check
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
+      security-events: write
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      with:
+        persist-credentials: false
 
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
 
     - name: Cache node modules
-      uses: actions/cache@v4
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
       with:
         path: ~/.npm
         key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-${{ hashFiles('**/package-lock.json') }}
@@ -233,7 +243,7 @@ jobs:
       run: npm run type-check
 
     - name: Upload security scan results
-      uses: github/codeql-action/upload-sarif@v3
+      uses: github/codeql-action/upload-sarif@c3400c2f38909e0dcf3c3a41f2030a8217be5d3e
       if: failure() && hashFiles('test-results/security-scan-results.sarif')
       with:
         sarif_file: 'test-results/security-scan-results.sarif'
@@ -246,16 +256,18 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      with:
+        persist-credentials: false
 
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
 
     - name: Cache node modules
-      uses: actions/cache@v4
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
       with:
         path: ~/.npm
         key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-${{ hashFiles('**/package-lock.json') }}
@@ -267,7 +279,7 @@ jobs:
       run: npm ci --prefer-offline --no-audit
 
     - name: Cache build artifacts
-      uses: actions/cache@v4
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
       with:
         path: |
           dist/
@@ -298,7 +310,7 @@ jobs:
         echo "- **Main Bundle**: $(ls -lh dist/index.js | awk '{print $5}')" >> $GITHUB_STEP_SUMMARY
 
     - name: Archive distribution package
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
       with:
         name: distribution-package-node${{ env.NODE_VERSION }}
         path: dist/
