@@ -205,6 +205,9 @@ jobs:
     name: Security & Dependency Check
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
+      security-events: write
 
     steps:
     - name: Checkout code
