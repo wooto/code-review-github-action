@@ -16,4 +16,4 @@ permissions:
 
 jobs:
   workflow-lint:
-    uses: wooto/shared-workflows/.github/workflows/workflow-lint.yml@58879bbcc2f6c692ef799b03f40dd32ab987c0ad
+    uses: wooto/shared-workflows/.github/workflows/workflow-lint.yml@30bff244694ce77b0e0d7e857b3a1ef4dd59d4cb
