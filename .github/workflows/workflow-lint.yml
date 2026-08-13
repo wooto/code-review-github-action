@@ -1,0 +1,19 @@
+name: Workflow Lint
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/**'
+      - '.github/actions/**'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/**'
+      - '.github/actions/**'
+
+permissions:
+  contents: read
+
+jobs:
+  workflow-lint:
+    uses: wooto/shared-workflows/.github/workflows/workflow-lint.yml@58879bbcc2f6c692ef799b03f40dd32ab987c0ad
